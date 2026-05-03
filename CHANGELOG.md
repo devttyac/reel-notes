@@ -1,5 +1,19 @@
 # Changelog
 
+## Versioning scheme
+
+reel-notes uses two version axes, by design:
+
+- **`/.claude-plugin/plugin.json` `version`** — the **repo release tag**. Bumped on every public release of the marketplace as a whole (currently 0.1.8).
+- **`/plugins/<name>/.claude-plugin/plugin.json` `version`** — the **per-plugin semver**. Bumped only when that specific plugin's behaviour, manifest, or runtime contract changes. As of 0.1.8: `sumtube` is at 0.1.7 (transcript.py portability fix), `media-downloader` is at 0.1.1 (compression suffix fix).
+
+Per-plugin versions therefore lag the repo tag whenever a release contains no changes to that plugin. This is intentional: it lets each plugin advertise its own stability independently to users who install only one of them via `claude plugin install <name>@reel-notes`. Section headers below are repo-release versions; per-plugin bumps are noted inline.
+
+## Unreleased — visual-detector unit test + doc cleanup
+
+- Adds `plugins/sumtube/tests/test_signal_scan.py` covering `summariser._signal_scan` directly: zero/one/two keywords return below threshold; 3+ keywords trigger the offer signal; case-insensitivity; multi-word phrase keywords (`"let me show"`, `"as you can see"`); deduplication (same keyword counted once regardless of repetitions). The detector is what gates the post-delivery "Re-run with visual summary?" prompt — gating logic is interactive and stays in `MANUAL_CHECKLIST.md`, but the keyword scan itself is now regression-protected.
+- `plugins/sumtube/skills/sumtube/SKILL.md`: exit-code 1 description corrected to mention both `SUMTUBE_API_KEY` and `ANTHROPIC_API_KEY` (was previously biased toward only `ANTHROPIC_API_KEY`, which is masked under Claude Code's sandbox).
+
 ## Unreleased — failure-path + manifest-structure tests
 
 Two new offline-friendly test modules; no plugin behaviour changes.
