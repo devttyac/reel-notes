@@ -1,0 +1,50 @@
+name: Live E2E
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+
+      - name: Setup Python
+        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55  # v5
+        with:
+          python-version: '3.12'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python -m pip install --upgrade pip
+          pip install yt-dlp pytest
+
+      - name: Install plugin runtime dependencies
+        run: |
+          pip install -r plugins/sumtube/requirements.txt
+
+      - name: Run offline + smoke tests
+        env:
+          SUMTUBE_API_KEY: ${{ secrets.SUMTUBE_API_KEY }}
+        run: |
+          pytest tests/e2e -m "not live and not paid" -v
+
+      - name: Run live (free) tests
+        env:
+          SUMTUBE_API_KEY: ${{ secrets.SUMTUBE_API_KEY }}
+        run: |
+          pytest tests/e2e -m "live and not paid" -v
+
+      - name: Run live + paid tests
+        env:
+          SUMTUBE_API_KEY: ${{ secrets.SUMTUBE_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          pytest tests/e2e -m "live and paid" -v

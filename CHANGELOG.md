@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased — e2e test kit (infra)
+
+Adds a pytest-based e2e test kit covering everything validated through v0.1.6, plus a manual checklist for paths the runner cannot drive (slash commands, auto-visual offer). Infra-only — no plugin behaviour change, no version bump.
+
+- `tests/e2e/` — `conftest.py` (shared fixtures, auto-skip on missing keys/network), `test_smoke.py`, `test_sumtube_youtube.py`, `test_sumtube_whisper.py`, `test_sumtube_non_youtube.py`, `test_sumtube_flags.py`, `test_media_downloader.py`. Regression assertions reference the bug version that motivated the test (e.g. `regression: v0.1.4 webm-compression empty-file`).
+- `tests/e2e/fixtures/zoo.mp4` — local mp4 (~600KB) for Whisper-path tests; `tests/e2e/fixtures/TEST_URLS.md` documents the canonical and backup URLs used by live tests.
+- `pytest.ini` — registers `live`, `paid`, `slow` markers. Default `pytest tests/e2e` runs offline tests only; live/paid require `-m`.
+- `MANUAL_CHECKLIST.md` — interactive verification for slash-command and auto-visual-offer paths.
+- `.github/workflows/test-live.yml` — runs the full suite on tag push (and via `workflow_dispatch`); requires `SUMTUBE_API_KEY` and `GROQ_API_KEY` repo secrets.
+
 ## v0.1.6 — 2026-05-03
 
 True fix for non-YouTube URLs (the v0.1.5 `bestaudio/best` selector change wasn't the actual root cause).
