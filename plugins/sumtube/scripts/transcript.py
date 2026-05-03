@@ -22,6 +22,7 @@ detect_input_type(input_str) classifies a raw input string into one of three con
 import logging
 import os
 import re
+import shutil
 import subprocess
 import tempfile
 from pathlib import Path
@@ -45,7 +46,10 @@ _AUDIO_EXTENSIONS: frozenset[str] = frozenset(
     {".mp3", ".m4a", ".wav", ".flac", ".ogg", ".aac", ".opus"}
 )
 
-_FFMPEG_PATH: str = "/opt/homebrew/bin/ffmpeg"
+_FFMPEG_PATH: str = (
+    shutil.which("ffmpeg")
+    or ("/opt/homebrew/bin/ffmpeg" if os.path.isfile("/opt/homebrew/bin/ffmpeg") else "")
+)
 _MAX_AUDIO_BYTES: int = 26_214_400  # 25 MB
 # Characters that have special meaning in shells and must never appear in paths
 # passed to subprocess (defence-in-depth on top of list-form invocation).
@@ -441,10 +445,10 @@ def _extract_audio(input_path: str) -> str:
     _validate_input_path(input_path)
     input_path = os.path.realpath(input_path)
 
-    if not os.path.isfile(_FFMPEG_PATH):
+    if not _FFMPEG_PATH or not os.path.isfile(_FFMPEG_PATH):
         raise FileNotFoundError(
-            f"ffmpeg binary not found at {_FFMPEG_PATH!r}. "
-            "Install Homebrew ffmpeg: brew install ffmpeg"
+            f"ffmpeg binary not found (resolved path: {_FFMPEG_PATH!r}). "
+            "Install: brew install ffmpeg (macOS) or apt-get install ffmpeg (Linux)."
         )
 
     fd, temp_path = tempfile.mkstemp(suffix=".mp3")

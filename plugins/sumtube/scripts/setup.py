@@ -14,6 +14,7 @@ Exit codes:
 
 import argparse
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -23,7 +24,10 @@ try:
 except ImportError:
     pass  # dotenv optional; env vars may be set directly
 
-_FFMPEG_PATH = "/opt/homebrew/bin/ffmpeg"
+_FFMPEG_PATH = (
+    shutil.which("ffmpeg")
+    or ("/opt/homebrew/bin/ffmpeg" if os.path.isfile("/opt/homebrew/bin/ffmpeg") else "")
+)
 
 
 def run_checks() -> None:
@@ -62,10 +66,11 @@ def run_checks() -> None:
         )
 
     # --- Soft requirement: ffmpeg binary ---
-    if not os.path.isfile(_FFMPEG_PATH):
+    if not _FFMPEG_PATH or not os.path.isfile(_FFMPEG_PATH):
         print(
-            f"WARNING: ffmpeg binary not found at {_FFMPEG_PATH!r}. "
-            "Local video extraction requires ffmpeg. Install with: brew install ffmpeg",
+            "WARNING: ffmpeg binary not found on PATH or at /opt/homebrew/bin/ffmpeg. "
+            "Local video extraction requires ffmpeg. "
+            "Install with: brew install ffmpeg (macOS) or apt-get install ffmpeg (Linux).",
             file=sys.stderr,
         )
 

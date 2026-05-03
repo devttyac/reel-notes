@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.1.8 — 2026-05-03
+
+Linux portability — `ffmpeg` binary path was hardcoded to `/opt/homebrew/bin/ffmpeg` (macOS Homebrew arm64), breaking the plugin entirely on Linux. Surfaced by the v0.1.7 CI run on Ubuntu where `ffmpeg` is at `/usr/bin/ffmpeg`.
+
+- `transcript.py`: resolve `_FFMPEG_PATH` via `shutil.which("ffmpeg")` first, fall back to `/opt/homebrew/bin/ffmpeg`. Same pattern already used for `yt-dlp` resolution.
+- `setup.py`: same resolution; updated warning message to mention both `brew install` and `apt-get install`.
+- `transcript.py`: updated runtime FileNotFoundError message similarly.
+- `sumtube` plugin bumped to v0.1.7.
+
 ## v0.1.7 — 2026-05-03
 
 Two CI-discovered fixes from the first `test-live.yml` workflow run.
