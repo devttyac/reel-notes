@@ -455,6 +455,7 @@ def _extract_audio(input_path: str) -> str:
             subprocess.run(
                 [
                     _FFMPEG_PATH,
+                    "-y",
                     "-i", input_path,
                     "-ac", "1",
                     "-b:a", "64k",

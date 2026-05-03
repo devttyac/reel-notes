@@ -8,3 +8,5 @@ dist/
 *.env
 !*.env.example
 *.pyc
+*.log
+.history.json

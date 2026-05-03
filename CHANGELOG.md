@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.3 — 2026-05-03
+
+Fix Whisper transcription on local files — every Whisper run on a local video file failed with "file is empty".
+
+- `transcript.py`: pass `-y` to ffmpeg so it overwrites the empty mp3 tempfile that `tempfile.mkstemp` pre-creates. Without `-y`, ffmpeg refused (silently in stderr), leaving a 0-byte file that Groq Whisper rejected.
+
 ## v0.1.2 — 2026-05-03
 
 Fix Claude Code sandbox compatibility — v0.1.1 was unusable under Claude Code because its sandbox injects an empty `ANTHROPIC_API_KEY` into all child processes, silently overwriting the user's real key.
