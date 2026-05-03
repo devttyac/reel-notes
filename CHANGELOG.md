@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.1.4 — 2026-05-03
+
+Fix media-downloader compression for non-mp4 source containers.
+
+- `media-downloader/scripts/download.py`: force `.mp4` output for the compressed file (was inheriting input suffix). Webm sources previously produced a 264-byte broken file because libx264/aac aren't valid in a webm container. Also adds `-movflags +faststart` so the moov atom is at the start of the file (better streaming/preview behaviour).
+- `media-downloader` plugin bumped to v0.1.1.
+
 ## v0.1.3 — 2026-05-03
 
 Fix Whisper transcription on local files — every Whisper run on a local video file failed with "file is empty".
