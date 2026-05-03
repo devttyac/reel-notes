@@ -19,6 +19,18 @@ That's it. The file path printed by `media-downloader` goes directly into `/sumt
 
 ---
 
+## Why a separate plugin?
+
+media-downloader is intentionally standalone. It does one thing — fetch a video to local disk — and asks for nothing else:
+
+- **No API keys.** Useful on its own when you just want a clean local copy of a clip, with no Anthropic or Groq dependency.
+- **Composable.** The output path prints to stdout; pipe it into sumtube, into your editor, into a backup script, or into any tool that takes a file.
+- **Independent risk surface.** yt-dlp extractors change as sites change — keeping the downloader separate means those updates never disturb sumtube's summarisation path, and vice versa.
+
+Pair it with sumtube for the full download → summarise flow, or use it on its own.
+
+---
+
 ## Supported sites
 
 Powered by [yt-dlp](https://github.com/yt-dlp/yt-dlp), which supports 1,000+ sites including:

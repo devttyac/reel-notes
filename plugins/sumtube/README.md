@@ -6,9 +6,15 @@ Summarise any video into structured notes.
 
 ## Why
 
-Most video summarisation tools handle only YouTube URLs and only when captions are available. That leaves out a significant share of real-world content: YouTube videos without auto-generated captions, videos from other platforms (X, Instagram, TikTok, Vimeo), and local video files recorded from meetings or screen captures.
+Most video summarisation tools handle only YouTube URLs and only when captions are available. That excludes a large slice of real content: YouTube videos without auto-captions (newer uploads, shorter clips, non-English), every video on TikTok / X / Instagram / Vimeo (no caption API), and every local recording (meetings, screen captures, podcasts).
 
-sumtube removes those gaps. It uses captions where they exist, falls back to Groq Whisper transcription when they do not, and accepts any local file path — so the same workflow handles the full range of video content without switching tools.
+sumtube closes those gaps with a three-tier transcript strategy:
+
+1. Use embedded captions where they exist (cheapest, fastest).
+2. Fall back to Groq Whisper when captions are missing — the only path that works for non-YouTube URLs and local files.
+3. Send only the resulting transcript text to Anthropic for summarisation. Raw audio never reaches the LLM.
+
+Whisper is what makes sumtube general-purpose. Without `GROQ_API_KEY`, captioned videos still work; with it, the same single command handles the full range of video content without switching tools.
 
 ---
 
