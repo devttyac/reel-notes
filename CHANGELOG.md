@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.1.6 — 2026-05-03
+
+True fix for non-YouTube URLs (the v0.1.5 `bestaudio/best` selector change wasn't the actual root cause).
+
+- `summarize.py`: `_download_audio_yt_dlp` now `os.unlink`s the temp stub created by `tempfile.mkstemp(suffix=".mp3")` before invoking yt-dlp. Without this, yt-dlp sees the empty file already exists, prints "already downloaded", skips the download entirely, then attempts postprocessing on the 0-byte stub — `ffprobe` fails to obtain the audio codec and the run errors out. Same root-cause family as the v0.1.3 ffmpeg `-y` fix (both caused by `mkstemp` pre-creating empty files), but yt-dlp lacks an `-y`-equivalent, so unlink is the correct remedy.
+- `sumtube` plugin bumped to v0.1.5.
+
 ## v0.1.5 — 2026-05-03
 
 Three sumtube fixes uncovered by extended TC-20 live verification (non-YouTube URLs, parens-in-filenames, Groq preflight noise).

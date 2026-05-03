@@ -78,6 +78,10 @@ def _download_audio_yt_dlp(url: str) -> str:
 
     fd, temp_path = tempfile.mkstemp(suffix=".mp3")
     os.close(fd)
+    # yt-dlp skips download if the output path already exists ("already downloaded"),
+    # then postprocesses the empty stub → ffprobe fails to read audio codec.
+    # Remove the stub so yt-dlp owns the path. We re-claim it as the return value.
+    os.unlink(temp_path)
 
     cmd = [
         yt_dlp_path,
