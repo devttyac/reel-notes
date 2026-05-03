@@ -42,6 +42,7 @@ def _ffprobe_codecs(path: str) -> dict:
 
 @pytest.mark.live
 @pytest.mark.slow
+@pytest.mark.youtube
 def test_compression_webm_source_produces_valid_mp4(
     python_executable, media_downloader_script, has_yt_dlp, has_ffmpeg, has_ffprobe, tmp_path
 ):
@@ -81,6 +82,7 @@ def test_compression_webm_source_produces_valid_mp4(
 
 @pytest.mark.live
 @pytest.mark.slow
+@pytest.mark.youtube
 def test_no_compress_flag_skips_compression(
     python_executable, media_downloader_script, has_yt_dlp, tmp_path
 ):

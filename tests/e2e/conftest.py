@@ -51,13 +51,20 @@ def pytest_collection_modifyitems(config, items):
     - `live` marker: skipped if no network.
     - `paid` marker: skipped if Anthropic key missing. Whisper-using paid tests
       additionally need GROQ_API_KEY; that's checked per-test where relevant.
+    - `youtube` marker: skipped under GitHub Actions because YouTube blocks
+      runner IPs as bot traffic ("Sign in to confirm you're not a bot").
+      Run these locally instead.
     """
     network_ok = _has_network()
     anthropic_ok = _has_anthropic_key()
+    in_github_actions = os.environ.get("GITHUB_ACTIONS", "").lower() == "true"
 
     skip_no_network = pytest.mark.skip(reason="no network — skipping live test")
     skip_no_key = pytest.mark.skip(
         reason="no SUMTUBE_API_KEY / ANTHROPIC_API_KEY — skipping paid test"
+    )
+    skip_youtube_in_ci = pytest.mark.skip(
+        reason="YouTube blocks GitHub Actions IPs as bot traffic — run locally"
     )
 
     for item in items:
@@ -65,6 +72,8 @@ def pytest_collection_modifyitems(config, items):
             item.add_marker(skip_no_network)
         if "paid" in item.keywords and not anthropic_ok:
             item.add_marker(skip_no_key)
+        if "youtube" in item.keywords and in_github_actions:
+            item.add_marker(skip_youtube_in_ci)
 
 
 @pytest.fixture(scope="session")

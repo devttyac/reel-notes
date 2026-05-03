@@ -1,12 +1,20 @@
 # Changelog
 
-## Unreleased — e2e test kit (infra)
+## v0.1.7 — 2026-05-03
 
-Adds a pytest-based e2e test kit covering everything validated through v0.1.6, plus a manual checklist for paths the runner cannot drive (slash commands, auto-visual offer). Infra-only — no plugin behaviour change, no version bump.
+Two CI-discovered fixes from the first `test-live.yml` workflow run.
 
-- `tests/e2e/` — `conftest.py` (shared fixtures, auto-skip on missing keys/network), `test_smoke.py`, `test_sumtube_youtube.py`, `test_sumtube_whisper.py`, `test_sumtube_non_youtube.py`, `test_sumtube_flags.py`, `test_media_downloader.py`. Regression assertions reference the bug version that motivated the test (e.g. `regression: v0.1.4 webm-compression empty-file`).
+- `summariser.py`: add `from __future__ import annotations`. Functions used `Anthropic` as a type annotation but imported `anthropic.Anthropic` lazily inside their bodies, so module-level annotation evaluation raised `NameError: name 'Anthropic' is not defined` on Python 3.12 / clean CI environments. PEP 563 deferred annotation evaluation resolves this without changing the lazy-import pattern. Local plugin runs masked the bug because the test venv had `anthropic` already in scope from a prior import path.
+- `tests/e2e/conftest.py` + `pytest.ini`: register `youtube` marker; auto-skip YouTube tests when `GITHUB_ACTIONS=true`. GitHub Actions runner IPs are flagged by YouTube as bot traffic (`Sign in to confirm you're not a bot`), making yt-dlp YouTube downloads non-functional in CI. YouTube-dependent tests now run locally only; CI relies on Vimeo + local fixtures.
+- `sumtube` plugin bumped to v0.1.6.
+
+## Unreleased — e2e test kit (infra) — published as part of v0.1.7
+
+Adds a pytest-based e2e test kit covering everything validated through v0.1.6, plus a manual checklist for paths the runner cannot drive (slash commands, auto-visual offer).
+
+- `tests/e2e/` — `conftest.py` (shared fixtures, auto-skip on missing keys/network/CI YouTube blocks), `test_smoke.py`, `test_sumtube_youtube.py`, `test_sumtube_whisper.py`, `test_sumtube_non_youtube.py`, `test_sumtube_flags.py`, `test_media_downloader.py`. Regression assertions reference the bug version that motivated the test (e.g. `regression: v0.1.4 webm-compression empty-file`).
 - `tests/e2e/fixtures/zoo.mp4` — local mp4 (~600KB) for Whisper-path tests; `tests/e2e/fixtures/TEST_URLS.md` documents the canonical and backup URLs used by live tests.
-- `pytest.ini` — registers `live`, `paid`, `slow` markers. Default `pytest tests/e2e` runs offline tests only; live/paid require `-m`.
+- `pytest.ini` — registers `live`, `paid`, `slow`, `youtube` markers. Default `pytest tests/e2e` runs offline tests only; live/paid require `-m`.
 - `MANUAL_CHECKLIST.md` — interactive verification for slash-command and auto-visual-offer paths.
 - `.github/workflows/test-live.yml` — runs the full suite on tag push (and via `workflow_dispatch`); requires `SUMTUBE_API_KEY` and `GROQ_API_KEY` repo secrets.
 

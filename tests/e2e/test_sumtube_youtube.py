@@ -15,6 +15,7 @@ YOUTUBE_URL = "https://www.youtube.com/watch?v=jNQXAC9IVRw"  # "Me at the zoo", 
 
 @pytest.mark.live
 @pytest.mark.paid
+@pytest.mark.youtube
 def test_youtube_captions_path_produces_note(python_executable, sumtube_script, tmp_path):
     """End-to-end: YouTube URL → captions → Anthropic → note file written."""
     result = run_subprocess(

@@ -17,6 +17,7 @@ YOUTUBE_LONG = "https://www.youtube.com/watch?v=8jPQjjsBbIc"  # TED, ~5min, ~220
 
 
 @pytest.mark.live
+@pytest.mark.youtube
 def test_transcript_only_no_anthropic_call(python_executable, sumtube_script, tmp_path):
     """--transcript-only must not POST to api.anthropic.com.
 
@@ -46,6 +47,7 @@ def test_transcript_only_no_anthropic_call(python_executable, sumtube_script, tm
 @pytest.mark.live
 @pytest.mark.paid
 @pytest.mark.slow
+@pytest.mark.youtube
 def test_visual_flag_runs_vision_pass(python_executable, sumtube_script, has_yt_dlp, has_ffmpeg, tmp_path):
     """--visual downloads video, extracts frames, runs claude-sonnet vision pass."""
     if not has_yt_dlp:
@@ -75,6 +77,7 @@ def test_visual_flag_runs_vision_pass(python_executable, sumtube_script, has_yt_
 @pytest.mark.live
 @pytest.mark.paid
 @pytest.mark.slow
+@pytest.mark.youtube
 def test_max_chunk_words_chunking(python_executable, sumtube_script, tmp_path):
     """Long transcript with a small chunk cap exercises the chunked summarisation path."""
     result = run_subprocess(

@@ -5,6 +5,8 @@ Processes a YouTube transcript through Claude API to produce a structured
 plain-markdown note. Handles single-chunk and multi-chunk transcripts.
 """
 
+from __future__ import annotations  # defer annotation eval — Anthropic is lazy-imported
+
 import base64
 import glob
 import json
