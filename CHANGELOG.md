@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.1.5 — 2026-05-03
+
+Three sumtube fixes uncovered by extended TC-20 live verification (non-YouTube URLs, parens-in-filenames, Groq preflight noise).
+
+- `summarize.py`: yt-dlp format selector changed from `bestaudio` to `bestaudio/best`. The `bestaudio`-only selector failed on Vimeo (and likely other non-YouTube sources) when yt-dlp picked a DASH stream that ffprobe couldn't read for postprocess. The fallback chain ensures yt-dlp downloads a full video container if the audio-only format is unreadable, then ffmpeg extracts the audio downstream.
+- `transcript.py`: relaxed local-file path validator to allow parentheses. Original validator rejected `()` as shell metacharacters, but every subprocess call in the plugin uses `shell=False`, so parens cannot trigger shell injection. yt-dlp produces filenames with parens by default (e.g., `Title (Year)_compressed.mp4`), so rejecting them broke the download → summarise handoff for many real-world sources.
+- `summarize.py`: added `User-Agent: sumtube-preflight/0.1` header to the Groq preflight HTTPS check. The Cloudflare 1010 error logged on every Whisper run was caused by Cloudflare blocking the default Python `urllib` user-agent. The preflight is non-blocking, so this was log noise rather than a functional defect, but it polluted every Whisper run output.
+- `sumtube` plugin bumped to v0.1.4.
+
 ## v0.1.4 — 2026-05-03
 
 Fix media-downloader compression for non-mp4 source containers.

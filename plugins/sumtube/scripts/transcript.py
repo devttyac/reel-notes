@@ -49,7 +49,7 @@ _FFMPEG_PATH: str = "/opt/homebrew/bin/ffmpeg"
 _MAX_AUDIO_BYTES: int = 26_214_400  # 25 MB
 # Characters that have special meaning in shells and must never appear in paths
 # passed to subprocess (defence-in-depth on top of list-form invocation).
-_SHELL_METACHARACTERS: str = ";|&$()<>`\x00"
+_SHELL_METACHARACTERS: str = ";|&$<>`\x00"  # parens excluded — safe under shell=False, common in yt-dlp filenames
 
 
 def detect_input_type(input_str: str) -> str:

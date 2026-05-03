@@ -81,7 +81,7 @@ def _download_audio_yt_dlp(url: str) -> str:
 
     cmd = [
         yt_dlp_path,
-        "--format", "bestaudio",
+        "--format", "bestaudio/best",
         "--extract-audio",
         "--audio-format", "mp3",
         "--audio-quality", "64K",
@@ -265,7 +265,10 @@ def _groq_preflight_check() -> None:
     try:
         req = urllib.request.Request(
             "https://api.groq.com/openai/v1/models",
-            headers={"Authorization": f"Bearer {groq_api_key}"},
+            headers={
+                "Authorization": f"Bearer {groq_api_key}",
+                "User-Agent": "sumtube-preflight/0.1",
+            },
         )
         with urllib.request.urlopen(req, timeout=3):
             pass
