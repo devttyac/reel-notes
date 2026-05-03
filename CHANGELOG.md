@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — failure-path + manifest-structure tests
+
+Two new offline-friendly test modules; no plugin behaviour changes.
+
+- **Failure-path tests** (`tests/e2e/test_failure_modes.py`): asserts `MissingAPIKeyError` (Whisper without `GROQ_API_KEY`), `AudioFileTooLargeError` (>25MB Groq limit), Anthropic 401 surfaces a clean message (no leaked traceback), nonexistent input path is rejected before any API call, and `media-downloader` on a bad URL exits non-zero with a useful message.
+- **Manifest-structure tests** (`tests/e2e/test_manifest_structure.py`): offline checks for `marketplace.json` well-formedness (name/owner/source paths resolve), per-plugin `plugin.json` semver, `SKILL.md` and slash-command file presence at conventional paths, and `hooks.json` nested-event schema with `${CLAUDE_PLUGIN_ROOT}` references that resolve to real script files. Regression for the day-one hook schema bug that broke plugin loading on v0.1.0.
+
 ## Unreleased — test infrastructure improvements
 
 Two test-only changes; plugin behaviour unchanged.
