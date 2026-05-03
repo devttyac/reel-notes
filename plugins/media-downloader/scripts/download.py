@@ -106,7 +106,7 @@ def compress_with_ffmpeg(input_path: str, output_dir: str) -> str:
         )
 
     input_file = Path(input_path)
-    output_file = Path(output_dir) / (input_file.stem + "_compressed" + input_file.suffix)
+    output_file = Path(output_dir) / (input_file.stem + "_compressed.mp4")
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
     cmd = [
@@ -116,6 +116,7 @@ def compress_with_ffmpeg(input_path: str, output_dir: str) -> str:
         "-crf", "23",
         "-preset", "fast",
         "-acodec", "aac",
+        "-movflags", "+faststart",
         "-y",           # overwrite output without prompting
         str(output_file),
     ]
