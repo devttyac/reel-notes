@@ -26,7 +26,7 @@ from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
 
-load_dotenv(Path(__file__).parent / ".env")
+load_dotenv(Path(__file__).parent.parent / ".env")
 
 from transcript import (
     detect_input_type,
@@ -672,7 +672,7 @@ def main():
     parser.add_argument(
         "--api-key",
         default=None,
-        help="Anthropic API key. Defaults to ANTHROPIC_API_KEY env var.",
+        help="Anthropic API key. Lookup order: --api-key flag → SUMTUBE_API_KEY → ANTHROPIC_API_KEY (also loads from .env in plugin root).",
     )
     parser.add_argument(
         "--max-chunk-words",
@@ -771,7 +771,7 @@ def main():
         logger.warning("Could not open log file %r (non-blocking): %s", log_file_path, log_err)
 
     # Resolve API key
-    api_key = args.api_key or os.environ.get("YTS_API_KEY") or os.environ.get("ANTHROPIC_API_KEY")
+    api_key = args.api_key or os.environ.get("SUMTUBE_API_KEY") or os.environ.get("ANTHROPIC_API_KEY")
     if not api_key and not args.transcript_only:
         print("Error: No API key provided.", file=sys.stderr)
         print(

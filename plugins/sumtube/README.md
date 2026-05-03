@@ -40,7 +40,14 @@ Run the setup script once after installation to verify dependencies:
 python scripts/setup.py
 ```
 
-**Required:** `ANTHROPIC_API_KEY` must be set as an environment variable before running any summary.
+**Required:** an Anthropic API key. sumtube looks for it in this order:
+
+1. `--api-key <key>` CLI flag
+2. `SUMTUBE_API_KEY` environment variable
+3. `ANTHROPIC_API_KEY` environment variable
+4. `.env` file at the plugin root (either variable name)
+
+> **Important — Claude Code users:** Claude Code's sandbox injects an empty `ANTHROPIC_API_KEY` into all child processes, overwriting any shell-level value. **Use `SUMTUBE_API_KEY` instead.** Either export it (`export SUMTUBE_API_KEY=...`) or copy `.env.example` to `.env` in the plugin root and fill in the key. Standalone shell users can use `ANTHROPIC_API_KEY` as before.
 
 **Optional:** `GROQ_API_KEY` enables Whisper transcription for caption-less videos. Without it, sumtube cannot process videos that lack captions.
 
@@ -104,12 +111,19 @@ Write plain markdown to the current working directory (no Obsidian frontmatter o
 
 **Environment variables (NFR-11)**
 
-Never pass API keys as command-line arguments or embed them in configuration files. Set them at the OS level:
+Never embed API keys in configuration files committed to source control. Set them in your shell profile or in a gitignored `.env` file at the plugin root:
 
 ```bash
-export ANTHROPIC_API_KEY="..."
+# Option A — shell export
+export SUMTUBE_API_KEY="..."     # preferred under Claude Code
 export GROQ_API_KEY="..."        # optional
+
+# Option B — .env file (copy from .env.example)
+cp .env.example .env
+# then edit .env with your real keys
 ```
+
+The `--api-key` CLI flag is supported but should be used only for one-off scripted runs — never in shared command history.
 
 **Data flow**
 

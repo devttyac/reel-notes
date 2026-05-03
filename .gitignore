@@ -3,6 +3,8 @@ __pycache__/
 .venv/
 dist/
 .env*
+!.env.example
 *_KEY
 *.env
+!*.env.example
 *.pyc

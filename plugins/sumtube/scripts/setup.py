@@ -15,6 +15,13 @@ Exit codes:
 import argparse
 import os
 import sys
+from pathlib import Path
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).parent.parent / ".env")
+except ImportError:
+    pass  # dotenv optional; env vars may be set directly
 
 _FFMPEG_PATH = "/opt/homebrew/bin/ffmpeg"
 
@@ -23,7 +30,8 @@ def run_checks() -> None:
     """Run environment preflight checks.
 
     Hard requirements:
-        - ANTHROPIC_API_KEY must be set.
+        - SUMTUBE_API_KEY or ANTHROPIC_API_KEY must be set.
+          (Also loaded from .env file in plugin root if present.)
 
     Soft requirements (warning only):
         - GROQ_API_KEY (Whisper fallback only).
@@ -31,11 +39,13 @@ def run_checks() -> None:
     """
     failed = False
 
-    # --- Hard requirement: ANTHROPIC_API_KEY ---
-    if not os.environ.get("ANTHROPIC_API_KEY"):
+    # --- Hard requirement: SUMTUBE_API_KEY or ANTHROPIC_API_KEY ---
+    if not (os.environ.get("SUMTUBE_API_KEY") or os.environ.get("ANTHROPIC_API_KEY")):
         print(
-            "ERROR: ANTHROPIC_API_KEY environment variable is not set. "
-            "Set it before running the summariser.",
+            "ERROR: No Anthropic API key found. Set SUMTUBE_API_KEY (preferred under "
+            "Claude Code, since its sandbox overwrites ANTHROPIC_API_KEY) or "
+            "ANTHROPIC_API_KEY in your shell, or place either in a .env file at the "
+            "plugin root. See .env.example.",
             file=sys.stderr,
         )
         failed = True

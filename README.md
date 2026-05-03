@@ -56,7 +56,7 @@ media-downloader uses yt-dlp under the hood, which supports 1,000+ sites includi
 |---|---|---|
 | [ffmpeg](https://ffmpeg.org/) | Yes | Audio extraction and format conversion |
 | [yt-dlp](https://github.com/yt-dlp/yt-dlp) | Yes | Video downloading (media-downloader) |
-| `ANTHROPIC_API_KEY` | Yes | Claude API access for sumtube summarisation |
+| `SUMTUBE_API_KEY` *or* `ANTHROPIC_API_KEY` | Yes | Claude API access for sumtube summarisation. Use `SUMTUBE_API_KEY` under Claude Code (its sandbox overwrites `ANTHROPIC_API_KEY`). Either may also live in `.env` at the plugin root. |
 | `GROQ_API_KEY` | No | Enables Whisper transcription fallback for caption-less videos |
 
 Install system dependencies on macOS:
@@ -74,9 +74,15 @@ brew install ffmpeg yt-dlp
 Set your credentials as environment variables before running either plugin:
 
 ```bash
+# Under Claude Code (recommended) — its sandbox blocks ANTHROPIC_API_KEY
+export SUMTUBE_API_KEY=your_anthropic_api_key_here
+# Or, in a standalone shell:
 export ANTHROPIC_API_KEY=your_anthropic_api_key_here
+
 export GROQ_API_KEY=your_groq_api_key_here   # optional
 ```
+
+Alternatively, copy `plugins/sumtube/.env.example` to `plugins/sumtube/.env` and fill in your keys (the `.env` file is gitignored).
 
 **Data flow:**
 
