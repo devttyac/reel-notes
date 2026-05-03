@@ -45,12 +45,12 @@
 ## Live E2E Verification — 2026-05-03
 
 **Status:** PASS — closes the deferred acceptance from 2026-05-02.
-**Executed against:** Published v0.1.6 release at https://github.com/devttyac/reel-notes/releases/tag/v0.1.6 (re-verified across multiple release cycles as new defects surfaced).
-**Test environment:** Clean clone at `~/Public Projects/reel-notes`, fresh Claude Code session, real production keys via plugin-root `.env` file.
+**Executed against:** Published v0.1.8 release at https://github.com/devttyac/reel-notes/releases/tag/v0.1.8 (re-verified across multiple release cycles as new defects surfaced, including two cross-platform defects caught by CI on Linux).
+**Test environment:** Clean clone at `~/Public Projects/reel-notes` (macOS arm64), GitHub Actions Ubuntu runner (Linux x86_64), real production keys via plugin-root `.env` file (local) and repo secrets (CI).
 
 ### Bugs uncovered and fixed during verification
 
-TC-20 live verification uncovered seven defects in v0.1.0 — four severe (rendered the plugin unusable) and three quality issues (broke specific real-world paths or produced log noise). All seven were fixed and shipped before TC-20 was closed:
+TC-20 live verification uncovered nine defects in v0.1.0 — five severe (rendered the plugin unusable on at least one platform) and four quality issues (broke specific real-world paths or produced log noise). All nine were fixed and shipped before TC-20 was closed:
 
 | Version | Bug | Fix |
 |---|---|---|
@@ -61,8 +61,10 @@ TC-20 live verification uncovered seven defects in v0.1.0 — four severe (rende
 | v0.1.5 (B2) | sumtube local-file path validator rejected `()` as shell metacharacters. Every subprocess invocation uses `shell=False` so parens are safe, and yt-dlp produces filenames with parens by default — so the `media-downloader → sumtube` handoff broke for any source with parens in its title. | Drop `()` from the `_SHELL_METACHARACTERS` set in `transcript.py`; add comment explaining why it is safe under `shell=False`. |
 | v0.1.5 (#6) | Groq preflight HTTPS check emitted Cloudflare 1010 on every Whisper run because Cloudflare blocked the default Python `urllib` User-Agent. Non-blocking but noisy — polluted every Whisper invocation log. | Add `User-Agent: sumtube-preflight/0.1` header to the preflight request in `summarize.py`. |
 | v0.1.6 (B1) | sumtube non-YouTube URL path failed at audio postprocess. `tempfile.mkstemp(suffix=".mp3")` pre-created an empty 0-byte file; yt-dlp saw the path existed, printed "already downloaded", skipped the download, then attempted postprocessing on the empty stub — `ffprobe` could not obtain audio codec. Same root-cause family as v0.1.3 (mkstemp pre-creates empty files), but yt-dlp lacks an `-y`-equivalent. v0.1.5 attempted this fix via `--format bestaudio/best` based on incomplete diagnosis; that change was harmless but not the actual root cause. | `os.unlink` the mkstemp stub before invoking yt-dlp in `summarize.py:_download_audio_yt_dlp`. |
+| v0.1.7 | `summariser.py` raised `NameError: name 'Anthropic' is not defined` on every import in clean CI environments. `Anthropic` was lazy-imported inside two functions but referenced as a parameter type annotation on two others — Python 3.12 strict annotation evaluation tripped over the missing module-level binding. Local macOS testing masked the bug because the test venv had `anthropic` resolved through a prior import path. Surfaced by the first `test-live.yml` CI run. | Add `from __future__ import annotations` (PEP 563 deferred annotation evaluation) at the top of `summariser.py`. Lazy-import pattern preserved. |
+| v0.1.8 | `_FFMPEG_PATH = "/opt/homebrew/bin/ffmpeg"` hardcoded in both `transcript.py` and `setup.py` — macOS Homebrew arm64 specific. On Linux (Ubuntu CI runners and any Linux user installing the plugin), ffmpeg lives at `/usr/bin/ffmpeg`, so every Whisper-path invocation failed with `ffmpeg binary not found`. The same module already used `shutil.which("yt-dlp")` for portable yt-dlp resolution — asymmetric handling that uniform code review would have caught. Surfaced by the v0.1.7 CI run on Ubuntu. | Resolve `_FFMPEG_PATH` via `shutil.which("ffmpeg")` with the Homebrew path as fallback. Same fix in both files. Updated warning + error messages to mention `apt-get install` alongside `brew install`. |
 
-### End-to-end results (against v0.1.6)
+### End-to-end results (against v0.1.8)
 
 | Path | Status | Evidence |
 |---|---|---|
@@ -85,6 +87,8 @@ TC-20 live verification uncovered seven defects in v0.1.0 — four severe (rende
 | Auto-visual offer | DEFERRED | Requires interactive Claude Code session to surface the offer prompt. Not blocking — orthogonal code path. |
 | Anthropic API call | PASS | HTTP 200 from `api.anthropic.com/v1/messages` (model: `claude-haiku-4-5-20251001`) |
 | Groq Whisper API call | PASS | HTTP 200 from `api.groq.com/openai/v1/audio/transcriptions` |
+| GitHub Actions CI on Ubuntu (Linux x86_64) | PASS | `test-live.yml` workflow run at v0.1.8 — all stages (offline+smoke, live free, live+paid) succeeded in 1m 22s. YouTube-dependent tests auto-skipped via `youtube` marker (runner IPs bot-blocked). Validates the v0.1.7 + v0.1.8 cross-platform fixes. |
+| Pytest e2e kit (local) | DELIVERED | `tests/e2e/` shipped alongside v0.1.7 with regression tests for v0.1.3 (ffmpeg `-y`), v0.1.4 (compression `.mp4`), v0.1.5 (parens validator), v0.1.6 (mkstemp unlink). Each regression test names the bug version. `MANUAL_CHECKLIST.md` covers paths the runner cannot drive. |
 | `--compact` mode | PASS | Smaller token footprint, shorter output verified end-to-end |
 
 ### Path verified vs. path deferred
