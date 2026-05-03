@@ -26,7 +26,8 @@ sumtube removes those gaps. It uses captions where they exist, falls back to Gro
 From the reel-notes repository root:
 
 ```bash
-claude plugin install plugins/sumtube
+claude plugin marketplace add .
+claude plugin install sumtube@reel-notes
 ```
 
 ---

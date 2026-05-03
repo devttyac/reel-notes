@@ -27,14 +27,15 @@ That's it. The first command fetches the video; the second produces the summary 
 
 ## Installation
 
-Clone the repository, then install each plugin into your Claude Code environment:
+Clone the repository, register the local marketplace, then install each plugin:
 
 ```bash
 git clone https://github.com/devttyac/reel-notes.git
 cd reel-notes
 
-claude plugin install plugins/sumtube
-claude plugin install plugins/media-downloader
+claude plugin marketplace add .
+claude plugin install sumtube@reel-notes
+claude plugin install media-downloader@reel-notes
 ```
 
 ---

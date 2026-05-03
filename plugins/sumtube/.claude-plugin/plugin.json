@@ -1,0 +1,9 @@
+{
+  "name": "sumtube",
+  "version": "0.1.0",
+  "description": "Summarise any video (YouTube URL, local file, or non-YouTube URL) into structured markdown notes",
+  "author": { "name": "Aaron Chan" },
+  "homepage": "https://github.com/devttyac/reel-notes",
+  "license": "MIT",
+  "keywords": ["video", "youtube", "summarise", "transcript", "whisper", "notes"]
+}

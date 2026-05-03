@@ -1,18 +1,21 @@
 {
+  "name": "reel-notes",
+  "owner": {
+    "name": "Aaron Chan",
+    "url": "https://github.com/devttyac/reel-notes"
+  },
   "plugins": [
     {
       "name": "sumtube",
+      "source": "./plugins/sumtube",
       "category": "productivity",
-      "path": "plugins/sumtube/",
-      "description": "Summarise any video into structured notes",
-      "skills": ["sumtube"]
+      "description": "Summarise any video into structured notes"
     },
     {
       "name": "media-downloader",
+      "source": "./plugins/media-downloader",
       "category": "productivity",
-      "path": "plugins/media-downloader/",
-      "description": "Download any video from 1,000+ sites",
-      "skills": ["media-downloader"]
+      "description": "Download any video from 1,000+ sites"
     }
   ]
 }

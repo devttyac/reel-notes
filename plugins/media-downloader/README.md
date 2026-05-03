@@ -41,7 +41,8 @@ Powered by [yt-dlp](https://github.com/yt-dlp/yt-dlp), which supports 1,000+ sit
 Install from the reel-notes repository:
 
 ```
-claude plugin install plugins/media-downloader
+claude plugin marketplace add .
+claude plugin install media-downloader@reel-notes
 ```
 
 ---
