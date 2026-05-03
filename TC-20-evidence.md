@@ -45,20 +45,21 @@
 ## Live E2E Verification — 2026-05-03
 
 **Status:** PASS — closes the deferred acceptance from 2026-05-02.
-**Executed against:** Published v0.1.3 release at https://github.com/devttyac/reel-notes/releases/tag/v0.1.3
+**Executed against:** Published v0.1.4 release at https://github.com/devttyac/reel-notes/releases/tag/v0.1.4 (re-verified after a 4th defect surfaced post-v0.1.3).
 **Test environment:** Clean clone at `~/Public Projects/reel-notes`, fresh Claude Code session, real production keys via plugin-root `.env` file.
 
 ### Bugs uncovered and fixed during verification
 
-TC-20 live verification uncovered three real defects in v0.1.0 that would have made the public plugin unusable. All three were fixed and shipped before TC-20 was closed:
+TC-20 live verification uncovered four real defects in v0.1.0 that would have made the public plugin unusable. All four were fixed and shipped before TC-20 was closed:
 
 | Version | Bug | Fix |
 |---|---|---|
 | v0.1.1 | Marketplace install flow broken: missing `name`/`owner` in `marketplace.json`, missing per-plugin `plugin.json` manifests, wrong `hooks.json` schema, `SKILL.md` at wrong path, README install instructions used a path-based command that Claude Code 2.1.x doesn't support. | Add manifests; switch `path` → `source`; nest `hooks` array; move `SKILL.md` to `skills/<name>/SKILL.md`; use `${CLAUDE_PLUGIN_ROOT}`; rewrite README install steps. |
 | v0.1.2 | Claude Code's sandbox injects empty `ANTHROPIC_API_KEY` into every child process, silently overwriting the user's real key. The slash command could never authenticate against Anthropic when invoked under Claude Code (matches retrospective: Claude Code Sandbox Overwrites ANTHROPIC_API_KEY). | Add `SUMTUBE_API_KEY` as preferred env var name (sandbox doesn't touch it); load `.env` from plugin root via `python-dotenv`; lookup order is `--api-key` → `SUMTUBE_API_KEY` → `ANTHROPIC_API_KEY`; document in README; add `.env.example`. |
 | v0.1.3 | ffmpeg invoked without `-y` refused to overwrite the empty mp3 tempfile pre-created by `tempfile.mkstemp`, producing a 0-byte file that Groq Whisper rejected. Every Whisper run on a local file failed before this fix. | Add `-y` to the ffmpeg argv in `transcript.py`. |
+| v0.1.4 | media-downloader compression broken for non-mp4 source containers. `download.py` used `input_file.suffix` for the compressed output filename, so a webm source produced a `_compressed.webm` while ffmpeg was forced to encode `libx264 + aac` — codecs webm rejects. Result: a 264-byte broken output. | Hardcode `.mp4` for the compressed output filename in `download.py`; add `-movflags +faststart` for streaming-friendly mp4. |
 
-### End-to-end results (against v0.1.3)
+### End-to-end results (against v0.1.4)
 
 | Path | Status | Evidence |
 |---|---|---|
@@ -67,7 +68,8 @@ TC-20 live verification uncovered three real defects in v0.1.0 that would have m
 | Setup preflight (media-downloader) | PASS | `python3 plugins/media-downloader/scripts/setup.py --check` → exit 0 |
 | API key resolution under Claude Code sandbox | PASS | `.env` at plugin root with `SUMTUBE_API_KEY` resolved correctly |
 | Caption transcription path (YouTube) | PASS | `https://www.youtube.com/watch?v=jNQXAC9IVRw` (Me at the zoo) → 39-word transcript via captions → compact summary written to `/tmp/Me-at-the-zoo-Compact/Me-at-the-zoo-Compact.md` |
-| Whisper transcription path (local file) | PASS | `/tmp/zoo.mp4` → ffmpeg extracted 148 KiB mp3 → Groq Whisper HTTP 200 → 168-word transcript → compact note at `/tmp/whisper-test/zoo-Compact/zoo-Compact.md` |
+| Whisper transcription path (local file) | PASS | `/tmp/zoo.mp4` → ffmpeg extracted 148 KiB mp3 → Groq Whisper HTTP 200 → 168-word transcript → compact note. Re-verified on v0.1.4 with 168-word output. |
+| media-downloader compression (webm source) | PASS | yt-dlp downloaded webm (463K) → `download.py` produced `Me at the zoo_compressed.mp4` (707K). `ffprobe` confirmed `codec_name=h264` (video) and `codec_name=aac` (audio) in a valid ISO Media mp4 container. |
 | Anthropic API call | PASS | HTTP 200 from `api.anthropic.com/v1/messages` (model: `claude-haiku-4-5-20251001`) |
 | Groq Whisper API call | PASS | HTTP 200 from `api.groq.com/openai/v1/audio/transcriptions` |
 | `--compact` mode | PASS | Smaller token footprint, shorter output verified end-to-end |
