@@ -70,8 +70,12 @@ def test_audio_file_too_large_rejected(
 ):
     """sumtube enforces the 25 MB Groq Whisper upload limit.
 
-    Generates a short test mp4 whose extracted mp3 will exceed 25 MB
-    by using uncompressible noise + high bitrate.
+    Sizing math: sumtube's transcript pipeline re-encodes audio to mono
+    mp3 at 64 kbps (8 KB/s) before uploading to Whisper, regardless of
+    the source bitrate. So the size that matters for the 25 MB gate is
+    `duration * 8 KB`, not the input file's on-disk size. To clear 25 MB
+    after re-encode we need ~3200 s of audio; we use 3500 s to give the
+    rejection clear headroom.
     """
     if not has_ffmpeg:
         pytest.skip("ffmpeg required to synthesise oversize fixture")
@@ -79,11 +83,10 @@ def test_audio_file_too_large_rejected(
         pytest.skip("Whisper limit only matters when Groq is configured")
 
     big = tmp_path / "big.mp4"
-    # ~30s of pcm noise → mp3 at 320kbps will exceed 25MB easily; pick a duration that does.
-    # 26MB / (320 kbits/s / 8) ≈ 650 seconds. Use 700s to clear the limit comfortably.
+    # 3500 s × 64 kbps mono mp3 ≈ 28 MB after re-encode (>25 MB Whisper cap).
     subprocess.run(
-        ["ffmpeg", "-y", "-f", "lavfi", "-i", "anoisesrc=color=white:duration=700",
-         "-c:a", "aac", "-b:a", "320k", str(big)],
+        ["ffmpeg", "-y", "-f", "lavfi", "-i", "anoisesrc=color=white:duration=3500",
+         "-c:a", "aac", "-b:a", "64k", str(big)],
         check=True, capture_output=True, timeout=300,
     )
 
