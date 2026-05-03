@@ -43,7 +43,7 @@ claude plugin install sumtube@reel-notes
 Run the setup script once after installation to verify dependencies:
 
 ```bash
-python scripts/setup.py
+python scripts/setup.py --check
 ```
 
 **Required:** an Anthropic API key. sumtube looks for it in this order:

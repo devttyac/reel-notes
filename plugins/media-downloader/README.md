@@ -64,7 +64,7 @@ claude plugin install media-downloader@reel-notes
 On first use, run the setup script to verify dependencies:
 
 ```
-python scripts/setup.py
+python scripts/setup.py --check
 ```
 
 No API keys are required. The script checks for `yt-dlp` and `ffmpeg` and reports any missing tools with install instructions.

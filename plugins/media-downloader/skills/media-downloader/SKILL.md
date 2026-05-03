@@ -93,13 +93,12 @@ Use the exact file path printed in Step 2.
 ## Output
 
 - The local file path is printed to stdout on successful download.
-- Compressed file size is reported alongside the path.
 - Use the printed path directly as the argument to `/sumtube`.
 
 Example output:
 
 ```
-Downloaded: ./media-downloader-output/video_1234567890.mp4 (18.4 MB)
+./media-downloader-output/video_1234567890.mp4
 ```
 
 ---
@@ -135,7 +134,7 @@ The standard two-step workflow:
 python scripts/download.py https://www.tiktok.com/@creator/video/9876543210
 
 # Output:
-# Downloaded: ./media-downloader-output/video_9876543210.mp4 (24.1 MB)
+# ./media-downloader-output/video_9876543210.mp4
 
 # Step 2: Summarise
 /sumtube ./media-downloader-output/video_9876543210.mp4

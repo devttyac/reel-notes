@@ -56,7 +56,7 @@ Follow these steps in order:
 **Step 1 — Run setup preflight**
 
 ```bash
-python scripts/setup.py
+python scripts/setup.py --check
 ```
 
 Stop if exit code is 1 (missing API key). Warn and continue if exit code is 2 or 3.
