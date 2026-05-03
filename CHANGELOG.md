@@ -1,10 +1,11 @@
 # Changelog
 
-## Unreleased — test helper bug fix
+## Unreleased — test infrastructure improvements
 
-Fix `_ffprobe_codecs` parser in `tests/e2e/test_media_downloader.py`. The previous implementation parsed ffprobe's `-of default=nw=1` output line-by-line, but ffprobe emits `codec_name=...` before `codec_type=...` per stream. The parser only assigned `codec_name` after seeing `codec_type`, so each stream's codec was filed under the previous stream's type — causing `test_compression_webm_source_produces_valid_mp4` to wrongly report `video=aac` for a valid h264+aac mp4. Switched to ffprobe's `-show_streams -of json` output for unambiguous per-stream parsing. Plugin behaviour unchanged.
+Two test-only changes; plugin behaviour unchanged.
 
-Coverage gap noted: the affected test is `@pytest.mark.youtube`-marked and auto-skipped on GitHub Actions (runner IPs bot-blocked). The v0.1.8 CI green status did not exercise this regression assertion. Local pytest runs do.
+- **`_ffprobe_codecs` parser fix** in `tests/e2e/test_media_downloader.py`. The previous implementation parsed ffprobe's `-of default=nw=1` output line-by-line, but ffprobe emits `codec_name=...` before `codec_type=...` per stream. The parser only assigned `codec_name` after seeing `codec_type`, so each stream's codec was filed under the previous stream's type — causing `test_compression_webm_source_produces_valid_mp4` to wrongly report `video=aac` for a valid h264+aac mp4. Switched to `-show_streams -of json` for unambiguous per-stream parsing.
+- **Closes the v0.1.4 CI coverage gap.** Adds `tests/e2e/fixtures/zoo.webm` (~620KB, libvpx-vp9 + libopus, re-encoded from `zoo.mp4`) and a new test `test_compression_webm_local_fixture_produces_valid_mp4` that imports `download.compress_with_ffmpeg` directly and runs it on the local webm. Network-free, runs in CI on every tag push. Validates the v0.1.4 regression assertion (h264+aac in valid mp4) without depending on YouTube downloads (which are bot-blocked on GitHub Actions runners). The original YouTube-sourced compression test is retained as `@pytest.mark.youtube` for local manual runs.
 
 ## v0.1.8 — 2026-05-03
 

@@ -116,6 +116,24 @@ def zoo_fixture() -> Path:
     return fixture
 
 
+@pytest.fixture(scope="session")
+def zoo_webm_fixture() -> Path:
+    """Local webm used to exercise the v0.1.4 compression regression in CI.
+
+    Re-encoded from `zoo.mp4` using libvpx-vp9 + libopus. Used by tests that
+    must run on GitHub Actions (where YouTube downloads are blocked by bot
+    detection) to validate that download.py's compression path produces a
+    valid mp4 from a webm source.
+
+    To regenerate:
+        ffmpeg -y -i zoo.mp4 -c:v libvpx-vp9 -b:v 200k -c:a libopus -b:a 64k zoo.webm
+    """
+    fixture = FIXTURES_DIR / "zoo.webm"
+    if not fixture.is_file():
+        pytest.skip(f"missing fixture: {fixture}")
+    return fixture
+
+
 @pytest.fixture
 def python_executable() -> str:
     """Python interpreter used to run plugin subprocess invocations.
