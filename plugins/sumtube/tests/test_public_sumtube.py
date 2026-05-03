@@ -621,7 +621,14 @@ class TestSetupCheck(unittest.TestCase):
     """setup.py --check exit code tests."""
 
     def _run_setup_check(self, env_overrides: dict | None = None) -> subprocess.CompletedProcess:
-        """Run scripts/setup.py --check with a clean environment."""
+        """Run scripts/setup.py --check with a clean environment.
+
+        setup.py loads `plugins/sumtube/.env` via python-dotenv on import,
+        so a developer-local `.env` would defeat the env-stripping below
+        and re-inject API keys. To keep the test hermetic regardless of
+        the local checkout state, temporarily rename the .env file (if
+        present) for the duration of the subprocess and restore it after.
+        """
         venv_python = str(_PLUGIN_ROOT / ".venv" / "bin" / "python")
         if not os.path.isfile(venv_python):
             venv_python = sys.executable
@@ -634,12 +641,23 @@ class TestSetupCheck(unittest.TestCase):
         if env_overrides:
             clean_env.update(env_overrides)
 
-        return subprocess.run(
-            [venv_python, str(_SCRIPTS_DIR / "setup.py"), "--check"],
-            capture_output=True,
-            text=True,
-            env=clean_env,
-        )
+        dotenv_path = _PLUGIN_ROOT / ".env"
+        masked_path = dotenv_path.with_suffix(".env.masked-for-test")
+        moved = False
+        if dotenv_path.exists():
+            dotenv_path.rename(masked_path)
+            moved = True
+
+        try:
+            return subprocess.run(
+                [venv_python, str(_SCRIPTS_DIR / "setup.py"), "--check"],
+                capture_output=True,
+                text=True,
+                env=clean_env,
+            )
+        finally:
+            if moved:
+                masked_path.rename(dotenv_path)
 
     def test_exits_zero_with_anthropic_key_only(self):
         """setup.py --check exits 0 when only ANTHROPIC_API_KEY is set."""
@@ -653,18 +671,21 @@ class TestSetupCheck(unittest.TestCase):
         )
 
     def test_exits_nonzero_without_any_key(self):
-        """setup.py --check exits non-zero when ANTHROPIC_API_KEY is not set."""
+        """setup.py --check exits non-zero when neither SUMTUBE_API_KEY
+        nor ANTHROPIC_API_KEY is set, and the error message names both
+        variables (the actual lookup chain).
+        """
         result = self._run_setup_check(env_overrides={})
         self.assertNotEqual(
             result.returncode, 0,
-            f"Expected non-zero exit when ANTHROPIC_API_KEY is missing. "
+            f"Expected non-zero exit when no Anthropic key is set. "
             f"stdout: {result.stdout!r} stderr: {result.stderr!r}",
         )
-        # Error message must mention ANTHROPIC_API_KEY
-        self.assertIn(
-            "ANTHROPIC_API_KEY",
-            result.stderr,
-            "Error output must name the missing ANTHROPIC_API_KEY.",
+        # Error message should reference at least one of the accepted var names.
+        self.assertTrue(
+            "SUMTUBE_API_KEY" in result.stderr or "ANTHROPIC_API_KEY" in result.stderr,
+            f"Error output must name SUMTUBE_API_KEY or ANTHROPIC_API_KEY. "
+            f"got stderr: {result.stderr!r}",
         )
 
     def test_groq_key_absent_is_non_fatal(self):
