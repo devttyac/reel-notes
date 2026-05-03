@@ -7,7 +7,7 @@ libx264+aac, producing a 264-byte broken file. v0.1.4 hardcodes .mp4.
 
 from __future__ import annotations
 
-import shutil
+import json
 import subprocess
 
 import pytest
@@ -18,26 +18,27 @@ YOUTUBE_SHORT = "https://www.youtube.com/watch?v=jNQXAC9IVRw"  # downloads as .w
 
 
 def _ffprobe_codecs(path: str) -> dict:
-    """Return {'video': codec_name, 'audio': codec_name} for the given file."""
+    """Return {'video': codec_name, 'audio': codec_name} for the given file.
+
+    Uses ffprobe's JSON output to avoid the line-ordering pitfall in
+    `default=nw=1` mode, where `codec_name` appears before `codec_type`
+    per stream and naive line-by-line parsing files each codec under the
+    previous stream's type.
+    """
     result = subprocess.run(
         [
             "ffprobe", "-v", "error",
-            "-show_entries", "stream=codec_name,codec_type",
-            "-of", "default=nw=1",
+            "-show_streams", "-of", "json",
             path,
         ],
         capture_output=True, text=True, timeout=30,
     )
-    codecs = {}
-    current_type = None
-    for line in result.stdout.splitlines():
-        if line.startswith("codec_name="):
-            name = line.split("=", 1)[1]
-            if current_type:
-                codecs[current_type] = name
-        elif line.startswith("codec_type="):
-            current_type = line.split("=", 1)[1]
-    return codecs
+    streams = json.loads(result.stdout or "{}").get("streams", [])
+    return {
+        s["codec_type"]: s["codec_name"]
+        for s in streams
+        if "codec_type" in s and "codec_name" in s
+    }
 
 
 @pytest.mark.live

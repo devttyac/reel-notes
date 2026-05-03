@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — test helper bug fix
+
+Fix `_ffprobe_codecs` parser in `tests/e2e/test_media_downloader.py`. The previous implementation parsed ffprobe's `-of default=nw=1` output line-by-line, but ffprobe emits `codec_name=...` before `codec_type=...` per stream. The parser only assigned `codec_name` after seeing `codec_type`, so each stream's codec was filed under the previous stream's type — causing `test_compression_webm_source_produces_valid_mp4` to wrongly report `video=aac` for a valid h264+aac mp4. Switched to ffprobe's `-show_streams -of json` output for unambiguous per-stream parsing. Plugin behaviour unchanged.
+
+Coverage gap noted: the affected test is `@pytest.mark.youtube`-marked and auto-skipped on GitHub Actions (runner IPs bot-blocked). The v0.1.8 CI green status did not exercise this regression assertion. Local pytest runs do.
+
 ## v0.1.8 — 2026-05-03
 
 Linux portability — `ffmpeg` binary path was hardcoded to `/opt/homebrew/bin/ffmpeg` (macOS Homebrew arm64), breaking the plugin entirely on Linux. Surfaced by the v0.1.7 CI run on Ubuntu where `ffmpeg` is at `/usr/bin/ffmpeg`.
