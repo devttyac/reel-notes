@@ -1,0 +1,18 @@
+{
+  "plugins": [
+    {
+      "name": "sumtube",
+      "category": "productivity",
+      "path": "plugins/sumtube/",
+      "description": "Summarise any video into structured notes",
+      "skills": ["sumtube"]
+    },
+    {
+      "name": "media-downloader",
+      "category": "productivity",
+      "path": "plugins/media-downloader/",
+      "description": "Download any video from 1,000+ sites",
+      "skills": ["media-downloader"]
+    }
+  ]
+}

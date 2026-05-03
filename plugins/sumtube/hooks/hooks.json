@@ -1,0 +1,11 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "bash plugins/sumtube/hooks/scripts/check-setup.sh",
+        "timeout": 5000
+      }
+    ]
+  }
+}

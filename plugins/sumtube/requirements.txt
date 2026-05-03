@@ -1,0 +1,4 @@
+anthropic==0.97.0
+groq==1.2.0
+youtube-transcript-api==1.2.4
+python-dotenv==1.2.2
