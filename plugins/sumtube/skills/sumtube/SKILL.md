@@ -19,7 +19,7 @@ Summarise any video (YouTube URL, local file, or non-YouTube URL) into structure
 Before invoking the skill, verify the environment is ready:
 
 ```bash
-python scripts/setup.py
+python scripts/setup.py --check
 ```
 
 Exit codes:

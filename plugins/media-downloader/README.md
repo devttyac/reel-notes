@@ -10,7 +10,7 @@ Use `media-downloader` to download a video locally, then pass the file path to `
 
 ```
 /media-downloader https://www.tiktok.com/@user/video/1234567890
-# Output: Downloaded: ./media-downloader-output/video_1234567890.mp4 (18.4 MB)
+# Output: ./media-downloader-output/video_1234567890.mp4
 
 /sumtube ./media-downloader-output/video_1234567890.mp4
 ```

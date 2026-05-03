@@ -152,6 +152,52 @@ def test_nonexistent_input_path_rejected(python_executable, sumtube_script, tmp_
     )
 
 
+# ---------- 6. Keyless path rejection — UX regression guard ----------
+
+def test_nonexistent_path_rejected_even_without_api_key(
+    python_executable, sumtube_script, tmp_path
+):
+    """A wrong path with NO API keys configured must surface "file does not
+    exist" — not "No API key provided".
+
+    Regression guard: an earlier ordering checked the API key first, so a
+    user typing a typo would be told to debug their API key configuration
+    before being told their path was wrong. Codex audit (2026-05-03)
+    flagged this as a Medium-severity UX bug; the fix moves the key check
+    inside process_single_url, after detect_input_type runs.
+    """
+    env = {k: v for k, v in os.environ.items()
+           if k not in {"SUMTUBE_API_KEY", "ANTHROPIC_API_KEY"}}
+
+    # Also mask the .env file so dotenv can't repopulate the keys.
+    dotenv_path = REPO_ROOT / "plugins" / "sumtube" / ".env"
+    masked_path = dotenv_path.with_suffix(".env.masked-for-test")
+    moved = False
+    if dotenv_path.exists():
+        dotenv_path.rename(masked_path)
+        moved = True
+
+    try:
+        result = subprocess.run(
+            [python_executable, str(sumtube_script), "/does/not/exist.mp4",
+             "--compact", "-o", str(tmp_path)],
+            capture_output=True, text=True, timeout=10, env=env,
+        )
+    finally:
+        if moved:
+            masked_path.rename(dotenv_path)
+
+    assert result.returncode != 0
+    combined = (result.stdout + result.stderr).lower()
+    assert "exist" in combined or "not found" in combined or "no such" in combined, (
+        f"path error must surface BEFORE API-key error. got:\n{result.stdout}\n{result.stderr}"
+    )
+    assert "no api key" not in combined, (
+        f"regression: API-key check fired before path classification. "
+        f"got:\n{result.stdout}\n{result.stderr}"
+    )
+
+
 # ---------- 5. media-downloader on a non-existent URL surfaces a clean error ----------
 
 @pytest.mark.live

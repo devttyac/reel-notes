@@ -19,7 +19,7 @@ Download any video from 1,000+ sites via yt-dlp with optional ffmpeg compression
 Before invoking the skill, run the setup script to verify all required tools are present:
 
 ```
-python scripts/setup.py
+python scripts/setup.py --check
 ```
 
 Exit codes:
@@ -52,7 +52,7 @@ If you are summarising a standard public YouTube video, `/sumtube` can handle th
 **Step 1 — Run setup preflight**
 
 ```
-python scripts/setup.py
+python scripts/setup.py --check
 ```
 
 Confirm exit code 0 before continuing. If non-zero, install the missing dependency and re-run.
@@ -69,7 +69,7 @@ Example:
 python scripts/download.py https://www.tiktok.com/@user/video/1234567890 --output ./downloads/
 ```
 
-The script prints the local file path and compressed size on completion.
+The script prints the local file path on completion.
 
 **Step 3 — Pass the file path to /sumtube**
 

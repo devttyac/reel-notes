@@ -384,11 +384,24 @@ def _maybe_offer_visual_rerun(
 
 def process_single_url(url: str, args, api_key: str, output_dir: str, history: dict) -> bool:
     """Process a single URL or local file path. Returns True on success, False on failure."""
-    # Step 1: Classify input type before any other processing.
+    # Step 1: Classify input type before any other processing. This runs
+    # before the api_key check so a wrong path surfaces "file does not
+    # exist" instead of "No API key provided".
     try:
         input_type = detect_input_type(url)
     except ValueError as e:
         print(f"Error: {e}", file=sys.stderr)
+        return False
+
+    # Step 1b: Now that the input is valid, enforce the Anthropic key
+    # requirement (skipped for --transcript-only, which never calls Claude).
+    if not api_key and not args.transcript_only:
+        print("Error: No API key provided.", file=sys.stderr)
+        print(
+            "Set SUMTUBE_API_KEY (preferred under Claude Code) or "
+            "ANTHROPIC_API_KEY, or pass --api-key.",
+            file=sys.stderr,
+        )
         return False
 
     # Non-YouTube URLs: direct yt-dlp invocation (no state file routing).
@@ -777,15 +790,12 @@ def main():
     except OSError as log_err:
         logger.warning("Could not open log file %r (non-blocking): %s", log_file_path, log_err)
 
-    # Resolve API key
+    # Resolve API key. Don't reject yet — input classification (and any
+    # path-existence error) must surface first so users typing the wrong
+    # path see "file does not exist" rather than "No API key provided".
+    # process_single_url enforces the key requirement once it knows the
+    # path is valid and the run will actually need to call Anthropic.
     api_key = args.api_key or os.environ.get("SUMTUBE_API_KEY") or os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key and not args.transcript_only:
-        print("Error: No API key provided.", file=sys.stderr)
-        print(
-            "Set ANTHROPIC_API_KEY environment variable or pass --api-key.",
-            file=sys.stderr,
-        )
-        sys.exit(1)
 
     # Resolve output directory
     output_dir = args.output
