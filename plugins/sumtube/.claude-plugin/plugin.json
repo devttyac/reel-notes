@@ -1,6 +1,6 @@
 {
   "name": "sumtube",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Summarise any video (YouTube URL, local file, or non-YouTube URL) into structured markdown notes",
   "author": { "name": "Aaron Chan" },
   "homepage": "https://github.com/devttyac/reel-notes",

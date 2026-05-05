@@ -1,6 +1,6 @@
 {
   "name": "media-downloader",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Download any video from 1,000+ sites via yt-dlp + ffmpeg compression",
   "author": { "name": "Aaron Chan" },
   "homepage": "https://github.com/devttyac/reel-notes",
