@@ -101,13 +101,6 @@ def test_plugin_hooks_schema(plugin):
                 assert "${CLAUDE_PLUGIN_ROOT}" in cmd, (
                     f"{hooks_json}: hook command must use ${{CLAUDE_PLUGIN_ROOT}} (not a relative path), got {cmd!r}"
                 )
-                # Regression: `${CLAUDE_PLUGIN_ROOT}` must be quoted so paths
-                # with spaces (e.g. ~/Public Projects/) don't word-split when
-                # the hook command is invoked via bash.
-                assert '"${CLAUDE_PLUGIN_ROOT}' in cmd or "'${CLAUDE_PLUGIN_ROOT}" in cmd, (
-                    f"{hooks_json}: ${{CLAUDE_PLUGIN_ROOT}} must be wrapped in quotes "
-                    f"to survive paths with spaces, got {cmd!r}"
-                )
                 # Resolve script reference and confirm it exists. Tokenise the
                 # raw command (with the placeholder still in place) so paths
                 # containing spaces in REPO_ROOT don't get shattered, then

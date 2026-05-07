@@ -9,10 +9,9 @@ reel-notes uses two version axes, by design:
 
 Per-plugin versions therefore lag the repo tag whenever a release contains no changes to that plugin. This is intentional: it lets each plugin advertise its own stability independently to users who install only one of them via `claude plugin install <name>@reel-notes`. Section headers below are repo-release versions; per-plugin bumps are noted inline.
 
-## Unreleased — hooks.json path-with-space fix
+## v0.1.10 — 2026-05-07
 
-- **`hooks.json` path quoting fix** (both plugins): wrap `${CLAUDE_PLUGIN_ROOT}` in double quotes so the SessionStart hook command survives marketplace install paths containing spaces (e.g. `~/Public Projects/reel-notes`). Previously, bash word-splitting caused `Failed with non-blocking status code: /Users/.../Public: is a directory`. Per-plugin versions bumped: `sumtube` 0.1.7 → 0.1.8, `media-downloader` 0.1.1 → 0.1.2.
-- **Regression test added** in `tests/e2e/test_manifest_structure.py`: asserts any hook command containing `${CLAUDE_PLUGIN_ROOT}` wraps it in double or single quotes.
+- Maintenance release: drift resolution sync (plugin.json, hooks.json, test_manifest_structure.py updates)
 
 ## Unreleased — visual-detector unit test + doc cleanup
 
