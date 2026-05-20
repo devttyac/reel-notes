@@ -9,11 +9,10 @@ reel-notes uses two version axes, by design:
 
 Per-plugin versions therefore lag the repo tag whenever a release contains no changes to that plugin. This is intentional: it lets each plugin advertise its own stability independently to users who install only one of them via `claude plugin install <name>@reel-notes`. Section headers below are repo-release versions; per-plugin bumps are noted inline.
 
-## v0.1.10 — 2026-05-07
-
-- Maintenance release: drift resolution sync (plugin.json, hooks.json, test_manifest_structure.py updates)
-
 ## Unreleased — visual-detector unit test + doc cleanup
+
+- `plugins/media-downloader/scripts/download.py`: optional `--cookies-from-browser` support added. Lookup order is `MEDIA_DOWNLOADER_COOKIES_FROM_BROWSER` → `YTDLP_COOKIES_FROM_BROWSER`. This is the practical fix for YouTube's `Sign in to confirm you're not a bot` challenge when a signed-in local browser session exists.
+- `plugins/media-downloader/tests/test_public_media_downloader.py`: command-shape regression test added for cookie-flag injection.
 
 - Adds `plugins/sumtube/tests/test_signal_scan.py` covering `summariser._signal_scan` directly: zero/one/two keywords return below threshold; 3+ keywords trigger the offer signal; case-insensitivity; multi-word phrase keywords (`"let me show"`, `"as you can see"`); deduplication (same keyword counted once regardless of repetitions). The detector is what gates the post-delivery "Re-run with visual summary?" prompt — gating logic is interactive and stays in `MANUAL_CHECKLIST.md`, but the keyword scan itself is now regression-protected.
 - `plugins/sumtube/skills/sumtube/SKILL.md`: exit-code 1 description corrected to mention both `SUMTUBE_API_KEY` and `ANTHROPIC_API_KEY` (was previously biased toward only `ANTHROPIC_API_KEY`, which is masked under Claude Code's sandbox).

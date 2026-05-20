@@ -34,6 +34,17 @@ _DISK_WARN_THRESHOLD_BYTES = 500 * 1024 * 1024  # 500 MB
 _DEFAULT_OUTPUT_DIR = "./media-downloader-output"
 
 
+def _yt_dlp_cookie_args() -> list[str]:
+    """Return optional browser-cookie args for yt-dlp."""
+    browser = (
+        os.environ.get("MEDIA_DOWNLOADER_COOKIES_FROM_BROWSER")
+        or os.environ.get("YTDLP_COOKIES_FROM_BROWSER")
+    )
+    if not browser:
+        return []
+    return ["--cookies-from-browser", browser]
+
+
 # ---------------------------------------------------------------------------
 # Input validation
 # ---------------------------------------------------------------------------
@@ -193,6 +204,7 @@ def download_url(url: str, output_dir: str, quality: Optional[str] = None) -> st
         "--no-playlist",
         "--output", output_template,
     ]
+    cmd.extend(_yt_dlp_cookie_args())
 
     if quality:
         cmd.extend(["--format", quality])
