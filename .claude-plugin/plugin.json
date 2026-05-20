@@ -1,9 +1,20 @@
 {
   "name": "reel-notes",
-  "version": "0.1.10",
-  "description": "Watch and summarise any video with Claude — sumtube + media-downloader",
-  "author": { "name": "Aaron Chan" },
+  "version": "0.1.11",
+  "description": "Watch and summarise any video with Claude \u2014 sumtube + media-downloader",
+  "author": {
+    "name": "Aaron Chan"
+  },
   "homepage": "https://github.com/devttyac/reel-notes",
   "license": "MIT",
-  "keywords": ["video", "summarise", "youtube", "whisper", "download", "yt-dlp", "notes", "transcript"]
+  "keywords": [
+    "video",
+    "summarise",
+    "youtube",
+    "whisper",
+    "download",
+    "yt-dlp",
+    "notes",
+    "transcript"
+  ]
 }
