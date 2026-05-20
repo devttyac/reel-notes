@@ -57,6 +57,15 @@ python scripts/setup.py --check
 
 **Optional:** `GROQ_API_KEY` enables Whisper transcription for caption-less videos. Without it, sumtube cannot process videos that lack captions.
 
+**Optional for yt-dlp-authenticated downloads:** if YouTube blocks anonymous `yt-dlp` requests during Whisper fallback or `--visual` downloads, configure auth in this order:
+
+1. `SUMTUBE_COOKIES_FILE=/absolute/path/to/youtube-cookies.txt`
+2. `YTDLP_COOKIES_FILE=/absolute/path/to/youtube-cookies.txt`
+3. `SUMTUBE_COOKIES_FROM_BROWSER=chrome`
+4. `YTDLP_COOKIES_FROM_BROWSER=chrome`
+
+`SUMTUBE_COOKIES_FILE` / `YTDLP_COOKIES_FILE` pass `--cookies <file>` and are more reliable than browser-cookie extraction when Keychain or browser-session access is unstable.
+
 ---
 
 ## Usage Examples

@@ -35,14 +35,28 @@ _DEFAULT_OUTPUT_DIR = "./media-downloader-output"
 
 
 def _yt_dlp_cookie_args() -> list[str]:
-    """Return optional browser-cookie args for yt-dlp."""
+    """Return optional cookie args for yt-dlp.
+
+    Precedence:
+      1. MEDIA_DOWNLOADER_COOKIES_FILE
+      2. YTDLP_COOKIES_FILE
+      3. MEDIA_DOWNLOADER_COOKIES_FROM_BROWSER
+      4. YTDLP_COOKIES_FROM_BROWSER
+    """
+    cookie_file = (
+        os.environ.get("MEDIA_DOWNLOADER_COOKIES_FILE")
+        or os.environ.get("YTDLP_COOKIES_FILE")
+    )
+    if cookie_file:
+        return ["--cookies", cookie_file]
+
     browser = (
         os.environ.get("MEDIA_DOWNLOADER_COOKIES_FROM_BROWSER")
         or os.environ.get("YTDLP_COOKIES_FROM_BROWSER")
     )
-    if not browser:
-        return []
-    return ["--cookies-from-browser", browser]
+    if browser:
+        return ["--cookies-from-browser", browser]
+    return []
 
 
 # ---------------------------------------------------------------------------

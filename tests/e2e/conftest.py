@@ -1,8 +1,11 @@
 """Shared fixtures for the reel-notes e2e test kit.
 
 Default `pytest tests/e2e` runs only offline tests. Live and paid tests are
-opted into via `-m "live"` or `-m "live and paid"`. Tests are auto-skipped
-when their preconditions (network, API keys) are not met — never failed.
+opted into via `-m "live"` or `-m "live and paid"`. YouTube-marked tests are
+additionally opt-in via `REEL_NOTES_RUN_YOUTUBE_LIVE=1`, because YouTube +
+yt-dlp behaviour is environment-dependent even when the plugin code is
+correct. Tests are auto-skipped when their preconditions are not met — never
+failed.
 """
 
 from __future__ import annotations
@@ -45,23 +48,34 @@ def _has_binary(name: str) -> bool:
     return shutil.which(name) is not None or os.path.isfile(f"/opt/homebrew/bin/{name}")
 
 
+def _youtube_live_opt_in() -> bool:
+    return os.environ.get("REEL_NOTES_RUN_YOUTUBE_LIVE", "").strip().lower() in {
+        "1", "true", "yes", "on",
+    }
+
+
 def pytest_collection_modifyitems(config, items):
     """Auto-skip tests whose preconditions are not met.
 
     - `live` marker: skipped if no network.
     - `paid` marker: skipped if Anthropic key missing. Whisper-using paid tests
       additionally need GROQ_API_KEY; that's checked per-test where relevant.
-    - `youtube` marker: skipped under GitHub Actions because YouTube blocks
-      runner IPs as bot traffic ("Sign in to confirm you're not a bot").
-      Run these locally instead.
+    - `youtube` marker: skipped unless `REEL_NOTES_RUN_YOUTUBE_LIVE=1` is set.
+      Live YouTube extraction is environment-dependent and is treated as a
+      manual smoke path rather than a default release gate. It is also skipped
+      under GitHub Actions because YouTube blocks runner IPs as bot traffic.
     """
     network_ok = _has_network()
     anthropic_ok = _has_anthropic_key()
     in_github_actions = os.environ.get("GITHUB_ACTIONS", "").lower() == "true"
+    youtube_live_opt_in = _youtube_live_opt_in()
 
     skip_no_network = pytest.mark.skip(reason="no network — skipping live test")
     skip_no_key = pytest.mark.skip(
         reason="no SUMTUBE_API_KEY / ANTHROPIC_API_KEY — skipping paid test"
+    )
+    skip_youtube_not_opted_in = pytest.mark.skip(
+        reason="set REEL_NOTES_RUN_YOUTUBE_LIVE=1 to run environment-dependent YouTube live tests"
     )
     skip_youtube_in_ci = pytest.mark.skip(
         reason="YouTube blocks GitHub Actions IPs as bot traffic — run locally"
@@ -72,6 +86,8 @@ def pytest_collection_modifyitems(config, items):
             item.add_marker(skip_no_network)
         if "paid" in item.keywords and not anthropic_ok:
             item.add_marker(skip_no_key)
+        if "youtube" in item.keywords and not youtube_live_opt_in:
+            item.add_marker(skip_youtube_not_opted_in)
         if "youtube" in item.keywords and in_github_actions:
             item.add_marker(skip_youtube_in_ci)
 

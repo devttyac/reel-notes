@@ -242,6 +242,51 @@ class TestDownloadYtDlpResolution(unittest.TestCase):
         idx = call_args.index("--cookies-from-browser")
         self.assertEqual(call_args[idx + 1], "chrome")
 
+    def test_ytdlp_includes_cookie_file_when_configured(self):
+        """download_url injects cookies.txt flag when env var is configured."""
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stdout = "/tmp/test_video.mp4\n"
+
+        with patch.dict(os.environ, {"MEDIA_DOWNLOADER_COOKIES_FILE": "/tmp/md-cookies.txt"}, clear=True), \
+             patch("shutil.which", return_value="/usr/local/bin/yt-dlp"), \
+             patch("subprocess.run", return_value=mock_result) as mock_run, \
+             patch.object(self.dl, "compress_with_ffmpeg", return_value="/tmp/test_video.mp4"):
+            self.dl.download_url(
+                "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                output_dir="/tmp/media-downloader-output",
+            )
+
+        call_args = mock_run.call_args[0][0]
+        self.assertIn("--cookies", call_args)
+        idx = call_args.index("--cookies")
+        self.assertEqual(call_args[idx + 1], "/tmp/md-cookies.txt")
+
+    def test_ytdlp_cookie_file_beats_browser_cookie_source(self):
+        """download_url prefers a cookies.txt file over browser-cookie extraction."""
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stdout = "/tmp/test_video.mp4\n"
+
+        with patch.dict(
+            os.environ,
+            {
+                "MEDIA_DOWNLOADER_COOKIES_FILE": "/tmp/md-cookies.txt",
+                "MEDIA_DOWNLOADER_COOKIES_FROM_BROWSER": "chrome",
+            },
+            clear=True,
+        ), patch("shutil.which", return_value="/usr/local/bin/yt-dlp"), \
+             patch("subprocess.run", return_value=mock_result) as mock_run, \
+             patch.object(self.dl, "compress_with_ffmpeg", return_value="/tmp/test_video.mp4"):
+            self.dl.download_url(
+                "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                output_dir="/tmp/media-downloader-output",
+            )
+
+        call_args = mock_run.call_args[0][0]
+        self.assertIn("--cookies", call_args)
+        self.assertNotIn("--cookies-from-browser", call_args)
+
     def test_ytdlp_not_invoked_with_shell_true(self):
         """yt-dlp subprocess.run must never use shell=True."""
         mock_result = MagicMock()

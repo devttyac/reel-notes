@@ -46,6 +46,31 @@ from output import render_note_plain
 HISTORY_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".history.json")
 
 
+def _yt_dlp_cookie_args() -> list[str]:
+    """Return optional cookie args for yt-dlp authenticated downloads.
+
+    Precedence:
+      1. SUMTUBE_COOKIES_FILE
+      2. YTDLP_COOKIES_FILE
+      3. SUMTUBE_COOKIES_FROM_BROWSER
+      4. YTDLP_COOKIES_FROM_BROWSER
+    """
+    cookie_file = (
+        os.environ.get("SUMTUBE_COOKIES_FILE")
+        or os.environ.get("YTDLP_COOKIES_FILE")
+    )
+    if cookie_file:
+        return ["--cookies", cookie_file]
+
+    browser = (
+        os.environ.get("SUMTUBE_COOKIES_FROM_BROWSER")
+        or os.environ.get("YTDLP_COOKIES_FROM_BROWSER")
+    )
+    if browser:
+        return ["--cookies-from-browser", browser]
+    return []
+
+
 def _download_audio_yt_dlp(url: str) -> str:
     """Download audio from *url* to a temporary MP3 file using yt-dlp.
 
@@ -91,8 +116,9 @@ def _download_audio_yt_dlp(url: str) -> str:
         "--audio-quality", "64K",
         "--no-playlist",
         "--output", temp_path,
-        url,
     ]
+    cmd.extend(_yt_dlp_cookie_args())
+    cmd.append(url)
 
     result = subprocess.run(
         cmd,
@@ -146,8 +172,9 @@ def _download_video_yt_dlp(url: str, tmpdir: str) -> str:
         "--restrict-filenames",
         "--no-playlist",
         "--print", "after_move:filepath",
-        url,
     ]
+    cmd.extend(_yt_dlp_cookie_args())
+    cmd.append(url)
 
     result = subprocess.run(
         cmd,

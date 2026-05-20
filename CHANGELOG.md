@@ -16,6 +16,16 @@ Per-plugin versions therefore lag the repo tag whenever a release contains no ch
 - `plugins/media-downloader/README.md`: documents browser-cookie configuration and the authenticated-download fallback for YouTube's bot gate.
 - `media-downloader` plugin bumped to v0.1.2.
 
+## Unreleased — cookies.txt auth fallback
+
+- `plugins/media-downloader/scripts/download.py`: adds cookies-file auth precedence (`MEDIA_DOWNLOADER_COOKIES_FILE` → `YTDLP_COOKIES_FILE`) ahead of browser-cookie extraction. This supports exported `cookies.txt` files when Keychain/browser-session access is unreliable.
+- `plugins/media-downloader/tests/test_public_media_downloader.py`: adds regression coverage for `--cookies <file>` injection and precedence over browser-cookie auth.
+- `plugins/media-downloader/README.md`: documents cookies-file configuration and the auth resolution order.
+- `plugins/sumtube/scripts/summarize.py`: adds the same yt-dlp cookies-file fallback for Whisper fallback and `--visual` downloads (`SUMTUBE_COOKIES_FILE` → `YTDLP_COOKIES_FILE`).
+- `plugins/sumtube/tests/test_public_sumtube.py`: adds public SumTube cookie-file resolution and command-shape regression tests.
+- `plugins/sumtube/README.md`: documents cookies-file support for yt-dlp-authenticated downloads.
+- `tests/e2e/conftest.py`: YouTube-marked live tests now require `REEL_NOTES_RUN_YOUTUBE_LIVE=1`. The deterministic local webm fixture remains the default regression gate; live YouTube extraction stays available as an explicit manual smoke path.
+
 ## v0.1.10 — 2026-05-07
 
 - Maintenance release: drift resolution sync (plugin.json, hooks.json, test_manifest_structure.py updates)

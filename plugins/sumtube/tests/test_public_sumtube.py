@@ -14,6 +14,7 @@ Test isolation: sys.path must not contain 'youtube-summarizer/'
 """
 
 import importlib
+import importlib.util
 import os
 import subprocess
 import sys
@@ -563,6 +564,83 @@ class TestSummarizeCLIFlags(unittest.TestCase):
                                  f"--output default contains 'Claude-Work': {line}")
                 self.assertNotIn("YouTube Notes", line,
                                  f"--output default contains 'YouTube Notes': {line}")
+
+
+class TestYtDlpCookieConfig(unittest.TestCase):
+    """yt-dlp cookie config should support cookies.txt fallback in the public plugin."""
+
+    @classmethod
+    def setUpClass(cls):
+        scripts_dir = str(_SCRIPTS_DIR)
+        if scripts_dir not in sys.path:
+            sys.path.insert(0, scripts_dir)
+        spec = importlib.util.spec_from_file_location(
+            "public_sumtube_summarize", str(_SCRIPTS_DIR / "summarize.py")
+        )
+        cls.summarize_mod = importlib.util.module_from_spec(spec)
+        assert spec.loader is not None
+        spec.loader.exec_module(cls.summarize_mod)
+
+    def test_cookie_file_prefers_sumtube_specific_env(self):
+        with patch.dict(
+            os.environ,
+            {
+                "SUMTUBE_COOKIES_FILE": "/tmp/public-sumtube-cookies.txt",
+                "YTDLP_COOKIES_FILE": "/tmp/shared-cookies.txt",
+                "SUMTUBE_COOKIES_FROM_BROWSER": "chrome",
+            },
+            clear=True,
+        ):
+            self.assertEqual(
+                self.summarize_mod._yt_dlp_cookie_args(),
+                ["--cookies", "/tmp/public-sumtube-cookies.txt"],
+            )
+
+    def test_cookie_file_falls_back_to_shared_env(self):
+        with patch.dict(os.environ, {"YTDLP_COOKIES_FILE": "/tmp/shared-cookies.txt"}, clear=True):
+            self.assertEqual(
+                self.summarize_mod._yt_dlp_cookie_args(),
+                ["--cookies", "/tmp/shared-cookies.txt"],
+            )
+
+    def test_browser_cookie_source_used_when_no_file_configured(self):
+        with patch.dict(os.environ, {"SUMTUBE_COOKIES_FROM_BROWSER": "safari"}, clear=True):
+            self.assertEqual(
+                self.summarize_mod._yt_dlp_cookie_args(),
+                ["--cookies-from-browser", "safari"],
+            )
+
+    def test_cookie_file_beats_browser_cookie_source(self):
+        with patch.dict(
+            os.environ,
+            {
+                "SUMTUBE_COOKIES_FILE": "/tmp/public-sumtube-cookies.txt",
+                "SUMTUBE_COOKIES_FROM_BROWSER": "chrome",
+            },
+            clear=True,
+        ):
+            self.assertEqual(
+                self.summarize_mod._yt_dlp_cookie_args(),
+                ["--cookies", "/tmp/public-sumtube-cookies.txt"],
+            )
+
+    def test_audio_download_includes_cookie_file(self):
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stderr = b""
+
+        with patch.dict(
+            os.environ,
+            {"SUMTUBE_COOKIES_FILE": "/tmp/public-sumtube-cookies.txt"},
+            clear=True,
+        ), patch("shutil.which", return_value="/usr/local/bin/yt-dlp"), \
+             patch("subprocess.run", return_value=mock_result) as mock_run:
+            self.summarize_mod._download_audio_yt_dlp("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+
+        cmd = mock_run.call_args[0][0]
+        self.assertIn("--cookies", cmd)
+        idx = cmd.index("--cookies")
+        self.assertEqual(cmd[idx + 1], "/tmp/public-sumtube-cookies.txt")
 
 
 # ---------------------------------------------------------------------------

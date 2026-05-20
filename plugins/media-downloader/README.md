@@ -69,13 +69,30 @@ python scripts/setup.py --check
 
 No API keys are required. The script checks for `yt-dlp` and `ffmpeg` and reports any missing tools with install instructions.
 
-If YouTube blocks anonymous downloads with `Sign in to confirm you’re not a bot`, set one of these environment variables before running the downloader:
+If YouTube blocks anonymous downloads with `Sign in to confirm you’re not a bot`, configure yt-dlp authentication before running the downloader.
+
+Preferred: use an exported cookies file:
+
+```bash
+export MEDIA_DOWNLOADER_COOKIES_FILE=/absolute/path/to/youtube-cookies.txt
+# or shared across yt-dlp-based workflows
+export YTDLP_COOKIES_FILE=/absolute/path/to/youtube-cookies.txt
+```
+
+Fallback: reuse a signed-in local browser session:
 
 ```bash
 export MEDIA_DOWNLOADER_COOKIES_FROM_BROWSER=chrome
 # or shared across yt-dlp-based workflows
 export YTDLP_COOKIES_FROM_BROWSER=chrome
 ```
+
+Resolution order is:
+
+1. `MEDIA_DOWNLOADER_COOKIES_FILE`
+2. `YTDLP_COOKIES_FILE`
+3. `MEDIA_DOWNLOADER_COOKIES_FROM_BROWSER`
+4. `YTDLP_COOKIES_FROM_BROWSER`
 
 Replace `chrome` with the signed-in browser you actually use, such as `safari`, `firefox`, `edge`, or `brave`.
 
@@ -108,7 +125,7 @@ python scripts/download.py https://www.youtube.com/watch?v=dQw4w9WgXcQ --quality
 
 - **Single video per invocation.** Playlist URLs are blocked (`--no-playlist` is enforced).
 - **HTTPS URLs only.** HTTP and non-URL inputs are rejected before download begins.
-- No direct username/password login flow is supported. Browser-cookie reuse via `--cookies-from-browser` is supported when configured through the environment variables above.
+- No direct username/password login flow is supported. Authenticated yt-dlp downloads are supported via `--cookies <file>` or `--cookies-from-browser` using the environment variables above.
 
 ---
 
