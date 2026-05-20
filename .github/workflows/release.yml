@@ -29,17 +29,33 @@ jobs:
       - name: Extract release notes from CHANGELOG
         shell: bash
         run: |
-          tag="${RELEASE_TAG}"
-          awk -v tag="$tag" '
-            $0 ~ "^## " tag "( |$)" {capture=1; next}
-            capture && /^## / {exit}
-            capture {print}
-          ' CHANGELOG.md > RELEASE_NOTES.md
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          import sys
 
-          if [ ! -s RELEASE_NOTES.md ]; then
-            echo "No changelog section found for ${tag}" >&2
-            exit 1
-          fi
+          tag = os.environ["RELEASE_TAG"]
+          lines = Path("CHANGELOG.md").read_text(encoding="utf-8").splitlines()
+          header = f"## {tag}"
+          capture = False
+          captured = []
+
+          for line in lines:
+              if not capture and line.startswith(header):
+                  capture = True
+                  continue
+              if capture and line.startswith("## "):
+                  break
+              if capture:
+                  captured.append(line)
+
+          body = "\n".join(captured).strip() + "\n"
+          if not capture or not body.strip():
+              sys.stderr.write(f"No changelog section found for {tag}\n")
+              sys.exit(1)
+
+          Path("RELEASE_NOTES.md").write_text(body, encoding="utf-8")
+          PY
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65  # v2
