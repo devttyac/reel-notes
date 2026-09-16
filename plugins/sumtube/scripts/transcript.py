@@ -48,6 +48,12 @@ _AUDIO_EXTENSIONS: frozenset[str] = frozenset(
     {".mp3", ".m4a", ".wav", ".flac", ".ogg", ".aac", ".opus"}
 )
 
+# Inputs the CLI accepts. Video is transcoded to audio by _extract_audio;
+# audio is passed straight to Whisper, skipping ffmpeg entirely.
+_SUPPORTED_INPUT_EXTENSIONS: frozenset[str] = (
+    _SUPPORTED_VIDEO_EXTENSIONS | _AUDIO_EXTENSIONS
+)
+
 _FFMPEG_PATH: str = (
     shutil.which("ffmpeg")
     or ("/opt/homebrew/bin/ffmpeg" if os.path.isfile("/opt/homebrew/bin/ffmpeg") else "")
@@ -105,10 +111,10 @@ def detect_input_type(input_str: str) -> str:
         )
 
     suffix = p.suffix.lower()
-    if suffix not in _SUPPORTED_VIDEO_EXTENSIONS:
+    if suffix not in _SUPPORTED_INPUT_EXTENSIONS:
         raise ValueError(
             f"Unsupported file extension {p.suffix!r}. "
-            f"Supported extensions: {sorted(_SUPPORTED_VIDEO_EXTENSIONS)}"
+            f"Supported extensions: {sorted(_SUPPORTED_INPUT_EXTENSIONS)}"
         )
 
     return INPUT_TYPE_LOCAL_FILE
@@ -516,6 +522,12 @@ def _whisper_fallback(input_source: str) -> dict:
         AudioFileTooLargeError: if the extracted audio exceeds 25 MB.
         AudioExtractionError: if ffmpeg fails.
     """
+    # Explicit argument wins; SUMTUBE_WHISPER_LANGUAGE is the fallback; None
+    # means let Whisper auto-detect (which can misfire on accented English).
+    # Read at call time, not import time, so the variable can be set or
+    # cleared by a caller after this module has been imported.
+    _lang = language or os.environ.get("SUMTUBE_WHISPER_LANGUAGE", "").strip() or None
+
     if not os.environ.get("GROQ_API_KEY"):
         raise MissingAPIKeyError(
             "GROQ_API_KEY environment variable is not set. "
