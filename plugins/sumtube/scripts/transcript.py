@@ -501,7 +501,7 @@ def _extract_audio(input_path: str) -> str:
         raise
 
 
-def _whisper_fallback(input_source: str) -> dict:
+def _whisper_fallback(input_source: str, language: str | None = None) -> dict:
     """Transcribe *input_source* via Groq Whisper when YouTube captions are unavailable.
 
     Args:
@@ -541,6 +541,15 @@ def _whisper_fallback(input_source: str) -> dict:
     if ext in _AUDIO_EXTENSIONS:
         # Already extracted audio — pass directly to Groq, skip ffmpeg.
         # The caller owns the file and is responsible for cleanup.
+        # The 25 MB gate lives in _extract_audio, which this branch skips,
+        # so enforce it here too — otherwise an oversize audio file would
+        # surface as a raw API error instead of AudioFileTooLargeError.
+        file_size = os.path.getsize(input_source)
+        if file_size > _MAX_AUDIO_BYTES:
+            raise AudioFileTooLargeError(
+                f"Audio file is {file_size:,} bytes, which exceeds the "
+                f"25 MB Groq upload limit ({_MAX_AUDIO_BYTES:,} bytes)."
+            )
         temp_path = input_source
         _owns_temp = False
     else:
@@ -556,6 +565,7 @@ def _whisper_fallback(input_source: str) -> dict:
                     file=audio_file,
                     model="whisper-large-v3",
                     response_format="verbose_json",
+                    **({"language": _lang} if _lang else {}),
                 )
         except Exception as exc:
             exc_str = str(exc).lower()

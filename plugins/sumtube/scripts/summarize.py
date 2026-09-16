@@ -413,6 +413,10 @@ def _maybe_offer_visual_rerun(
 
 def process_single_url(url: str, args, api_key: str, output_dir: str, history: dict) -> bool:
     """Process a single URL or local file path. Returns True on success, False on failure."""
+    # --language wins; transcript._whisper_fallback falls back to
+    # SUMTUBE_WHISPER_LANGUAGE, then to Whisper auto-detect.
+    whisper_language = getattr(args, "language", None)
+
     # Step 1: Classify input type before any other processing. This runs
     # before the api_key check so a wrong path surfaces "file does not
     # exist" instead of "No API key provided".
@@ -441,7 +445,7 @@ def process_single_url(url: str, args, api_key: str, output_dir: str, history: d
         temp_audio_path: str | None = None
         try:
             temp_audio_path = _download_audio_yt_dlp(url)
-            transcript_data = _whisper_fallback(temp_audio_path)
+            transcript_data = _whisper_fallback(temp_audio_path, language=whisper_language)
         except GroqQuotaExhaustedError as exc:
             print(f"Groq quota exhausted: {exc}", file=sys.stderr)
             return False
@@ -511,7 +515,7 @@ def process_single_url(url: str, args, api_key: str, output_dir: str, history: d
             _groq_preflight_check()
         print("Extracting transcript via Whisper (local file)...")
         try:
-            transcript_data = _whisper_fallback(url)
+            transcript_data = _whisper_fallback(url, language=whisper_language)
         except Exception as e:
             print(f"Error during Whisper transcription: {e}", file=sys.stderr)
             return False
@@ -575,7 +579,7 @@ def process_single_url(url: str, args, api_key: str, output_dir: str, history: d
             temp_audio_path: str | None = None
             try:
                 temp_audio_path = _download_audio_yt_dlp(url)
-                transcript_data = _whisper_fallback(temp_audio_path)
+                transcript_data = _whisper_fallback(temp_audio_path, language=whisper_language)
             except Exception as fallback_exc:
                 print(
                     f"Whisper fallback failed: {fallback_exc}",
@@ -739,6 +743,15 @@ def main():
         "--transcript-only",
         action="store_true",
         help="Extract and print the transcript without summarising. Useful for debugging.",
+    )
+    parser.add_argument(
+        "--language",
+        default=None,
+        help=(
+            "ISO-639-1 language hint for Whisper transcription, e.g. 'en'. "
+            "Overrides SUMTUBE_WHISPER_LANGUAGE. When neither is set, Whisper "
+            "auto-detects, which can misidentify accented English."
+        ),
     )
     parser.add_argument(
         "--force",
