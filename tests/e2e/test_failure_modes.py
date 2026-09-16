@@ -76,6 +76,13 @@ def test_audio_file_too_large_rejected(
     `duration * 8 KB`, not the input file's on-disk size. To clear 25 MB
     after re-encode we need ~3200 s of audio; we use 3500 s to give the
     rejection clear headroom.
+
+    Runs with --transcript-only deliberately. Under --compact the run is
+    rejected at the Anthropic key check (summarize.py, "No API key
+    provided") before the transcript path executes, so the size gate is
+    never reached and the assertion below fails on the wrong error.
+    --transcript-only needs only GROQ_API_KEY, which is what the skip
+    guard above checks, so the test exercises the gate it documents.
     """
     if not has_ffmpeg:
         pytest.skip("ffmpeg required to synthesise oversize fixture")
@@ -92,7 +99,7 @@ def test_audio_file_too_large_rejected(
 
     result = run_subprocess(
         [python_executable, str(sumtube_script), str(big),
-         "--compact", "-o", str(tmp_path), "--force"],
+         "--transcript-only", "-o", str(tmp_path), "--force"],
         timeout=300,
     )
     assert result.returncode != 0
