@@ -19,6 +19,8 @@ detect_input_type(input_str) classifies a raw input string into one of three con
   Any http:// or https:// URL that is NOT a YouTube URL.
 """
 
+from __future__ import annotations
+
 import logging
 import os
 import re

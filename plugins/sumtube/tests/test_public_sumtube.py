@@ -13,6 +13,8 @@ Test isolation: sys.path must not contain 'youtube-summarizer/'
 (enforced in conftest.py).
 """
 
+from __future__ import annotations
+
 import importlib
 import importlib.util
 import os

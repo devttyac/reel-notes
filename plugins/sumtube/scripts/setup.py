@@ -9,7 +9,7 @@ Usage:
 
 Exit codes:
     0 — all hard requirements met (GROQ_API_KEY warning does not block)
-    1 — a hard requirement is missing (ANTHROPIC_API_KEY)
+    1 — a hard requirement is missing (Python 3.10+, or ANTHROPIC_API_KEY)
 """
 
 import argparse
@@ -23,6 +23,8 @@ try:
     load_dotenv(Path(__file__).parent.parent / ".env")
 except ImportError:
     pass  # dotenv optional; env vars may be set directly
+
+_MIN_PYTHON = (3, 10)
 
 _FFMPEG_PATH = (
     shutil.which("ffmpeg")
@@ -41,6 +43,18 @@ def run_checks() -> None:
         - GROQ_API_KEY (Whisper fallback only).
         - ffmpeg binary (local video extraction only).
     """
+    # Version floor first: the scripts use PEP 604 unions, so on older
+    # interpreters they die at import with an opaque
+    # "TypeError: unsupported operand type(s) for |". Say so plainly instead.
+    if sys.version_info < _MIN_PYTHON:
+        print(
+            f"FAIL  Python {_MIN_PYTHON[0]}.{_MIN_PYTHON[1]}+ is required; "
+            f"this interpreter is {sys.version_info.major}.{sys.version_info.minor}"
+            f".{sys.version_info.micro} ({sys.executable}).",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
     failed = False
 
     # --- Hard requirement: SUMTUBE_API_KEY or ANTHROPIC_API_KEY ---

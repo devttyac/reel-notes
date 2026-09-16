@@ -76,6 +76,7 @@ media-downloader uses yt-dlp under the hood, which supports 1,000+ sites includi
 
 | Dependency | Required | Purpose |
 |---|---|---|
+| Python 3.10+ | Yes | The plugins use PEP 604 union syntax (`str | None`). CI runs 3.12. |
 | [ffmpeg](https://ffmpeg.org/) | Yes | Audio extraction and format conversion |
 | [yt-dlp](https://github.com/yt-dlp/yt-dlp) | Yes | Video downloading (media-downloader) |
 | `SUMTUBE_API_KEY` *or* `ANTHROPIC_API_KEY` | Yes | Claude API access for sumtube summarisation. Use `SUMTUBE_API_KEY` under Claude Code (its sandbox overwrites `ANTHROPIC_API_KEY`). Either may also live in `.env` at the plugin root. |

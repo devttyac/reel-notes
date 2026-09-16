@@ -12,6 +12,8 @@ Examples:
     python summarize.py "/path/to/local/video.mp4" --no-obsidian
 """
 
+from __future__ import annotations
+
 import argparse
 import logging
 import logging.handlers
