@@ -27,7 +27,7 @@ FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
 
 def _has_anthropic_key() -> bool:
-    return bool(os.environ.get("SUMTUBE_API_KEY") or os.environ.get("ANTHROPIC_API_KEY"))
+    return bool(os.environ.get("SUMTUBE_API_KEY"))
 
 
 def _has_groq_key() -> bool:
@@ -72,7 +72,7 @@ def pytest_collection_modifyitems(config, items):
 
     skip_no_network = pytest.mark.skip(reason="no network — skipping live test")
     skip_no_key = pytest.mark.skip(
-        reason="no SUMTUBE_API_KEY / ANTHROPIC_API_KEY — skipping paid test"
+        reason="no SUMTUBE_API_KEY — skipping paid test"
     )
     skip_youtube_not_opted_in = pytest.mark.skip(
         reason="set REEL_NOTES_RUN_YOUTUBE_LIVE=1 to run environment-dependent YouTube live tests"

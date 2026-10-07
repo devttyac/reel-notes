@@ -79,7 +79,7 @@ media-downloader uses yt-dlp under the hood, which supports 1,000+ sites includi
 | Python 3.10+ | Yes | The plugins use PEP 604 union syntax (`str | None`). CI runs 3.12. |
 | [ffmpeg](https://ffmpeg.org/) | Yes | Audio extraction and format conversion |
 | [yt-dlp](https://github.com/yt-dlp/yt-dlp) | Yes | Video downloading (media-downloader) |
-| `SUMTUBE_API_KEY` *or* `ANTHROPIC_API_KEY` | Yes | Claude API access for sumtube summarisation. Use `SUMTUBE_API_KEY` under Claude Code (its sandbox overwrites `ANTHROPIC_API_KEY`). Either may also live in `.env` at the plugin root. |
+| `SUMTUBE_API_KEY` | Yes | Claude API access for sumtube summarisation. Set it in your shell or in `~/.config/sumtube/.env`. `ANTHROPIC_API_KEY` is not read (since 0.2.0): Claude Code's sandbox overwrites it, and the Anthropic SDK would otherwise read it on its own, so sumtube could pick it up by accident (if that variable is set, Claude Code may switch a subscriber to API billing). |
 | `GROQ_API_KEY` | No | Enables Whisper transcription fallback for caption-less videos |
 
 Install system dependencies on macOS:
@@ -109,15 +109,24 @@ In practice: Whisper is what turns sumtube from a YouTube-caption summariser int
 Set your credentials as environment variables before running either plugin:
 
 ```bash
-# Under Claude Code (recommended) — its sandbox blocks ANTHROPIC_API_KEY
 export SUMTUBE_API_KEY=your_anthropic_api_key_here
-# Or, in a standalone shell:
-export ANTHROPIC_API_KEY=your_anthropic_api_key_here
-
 export GROQ_API_KEY=your_groq_api_key_here   # optional
 ```
 
-Alternatively, copy `plugins/sumtube/.env.example` to `plugins/sumtube/.env` and fill in your keys (the `.env` file is gitignored).
+Or keep them in a key file outside the repository and the plugin folder:
+
+```bash
+mkdir -p ~/.config/sumtube
+cp plugins/sumtube/.env.example ~/.config/sumtube/.env
+chmod 600 ~/.config/sumtube/.env
+# then edit ~/.config/sumtube/.env and fill in your keys
+```
+
+sumtube reads the environment and `~/.config/sumtube/.env` only. A `.env` file inside the plugin folder is no longer read, and `ANTHROPIC_API_KEY` is no longer accepted.
+
+**Upgrading from 0.1.x (breaking change in sumtube 0.2.0):** create `~/.config/sumtube`, move your old `plugins/sumtube/.env` there, rename `ANTHROPIC_API_KEY` to `SUMTUBE_API_KEY` inside it, and run `chmod 600 ~/.config/sumtube/.env`. Details are in `CHANGELOG.md`.
+
+**Prompt-injection filtering:** sumtube flags common variants of text addressed to an AI inside transcripts (override phrases, chat-template tokens, fake role tags, external Markdown images, long Base64 runs), replaces them with a visible marker, and starts the note with a warning line when anything was flagged. It is a filter for common variants, not a guarantee; the model's own resistance remains the main defence.
 
 **Data flow:**
 

@@ -28,7 +28,7 @@ def test_local_file_without_groq_key_fails_cleanly(
     rename the .env file (if present) for the duration of the run so the
     subprocess has truly no Groq key available, then restore it.
     """
-    anthropic_key = os.environ.get("SUMTUBE_API_KEY") or os.environ.get("ANTHROPIC_API_KEY")
+    anthropic_key = os.environ.get("SUMTUBE_API_KEY")
     if not anthropic_key:
         pytest.skip("needs Anthropic key to reach the Whisper path")
 
@@ -122,7 +122,6 @@ def test_bad_anthropic_key_surfaces_clean_error(
         pytest.skip("needs Groq for Whisper to reach the Anthropic call")
 
     monkeypatch.setenv("SUMTUBE_API_KEY", "sk-ant-invalid-key-for-testing")
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-invalid-key-for-testing")
 
     result = run_subprocess(
         [python_executable, str(sumtube_script), str(zoo_fixture),
@@ -175,6 +174,8 @@ def test_nonexistent_path_rejected_even_without_api_key(
     """
     env = {k: v for k, v in os.environ.items()
            if k not in {"SUMTUBE_API_KEY", "ANTHROPIC_API_KEY"}}
+    # Point HOME at an empty folder so ~/.config/sumtube/.env cannot repopulate the keys.
+    env["HOME"] = str(tmp_path)
 
     # Also mask the .env file so dotenv can't repopulate the keys.
     dotenv_path = REPO_ROOT / "plugins" / "sumtube" / ".env"

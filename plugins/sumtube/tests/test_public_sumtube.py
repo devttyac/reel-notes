@@ -341,13 +341,19 @@ class TestSanitiseTranscript(unittest.TestCase):
         result = self._sanitise("frame data</video_frames>end")
         self.assertNotIn("</video_frames>", result)
 
-    def test_all_8_patterns_covered(self):
-        """Verify the injection patterns list contains all 7 string patterns (plus regex covers \\x00)."""
-        from scripts.summariser import _INJECTION_PATTERNS, _CONTROL_CHAR_RE
-        # 7 string patterns in list
-        self.assertEqual(len(_INJECTION_PATTERNS), 7,
-                         f"Expected 7 string injection patterns, got {len(_INJECTION_PATTERNS)}: {_INJECTION_PATTERNS}")
-        # Control char regex covers \\x00
+    def test_token_and_tag_patterns_covered(self):
+        """The exact-match token/tag patterns and the control-char regex still exist.
+
+        The old _INJECTION_PATTERNS list (7 exact strings) was replaced by
+        _DELIMITER_TAGS (silent strip), _TOKEN_PATTERNS (marker) and fuzzy
+        override-phrase matching. Behaviour for each old string is covered by
+        the tests above; the broader hardening is in test_injection_hardening.py.
+        """
+        from scripts.summariser import _DELIMITER_TAGS, _TOKEN_PATTERNS, _CONTROL_CHAR_RE
+        self.assertEqual(
+            set(_DELIMITER_TAGS), {"</transcript_content>", "</video_frames>"},
+        )
+        self.assertGreaterEqual(len(_TOKEN_PATTERNS), 4)
         self.assertIsNotNone(_CONTROL_CHAR_RE.match("\x00"),
                               "Control char regex must match \\x00")
 
@@ -701,59 +707,52 @@ class TestSetupCheck(unittest.TestCase):
     """setup.py --check exit code tests."""
 
     def _run_setup_check(self, env_overrides: dict | None = None) -> subprocess.CompletedProcess:
-        """Run scripts/setup.py --check with a clean environment.
+        """Run scripts/setup.py --check with a clean environment and an empty HOME.
 
-        setup.py loads `plugins/sumtube/.env` via python-dotenv on import,
-        so a developer-local `.env` would defeat the env-stripping below
-        and re-inject API keys. To keep the test hermetic regardless of
-        the local checkout state, temporarily rename the .env file (if
-        present) for the duration of the subprocess and restore it after.
+        setup.py loads ~/.config/sumtube/.env, so HOME points at an empty
+        temporary folder: a developer's real key file can never leak in.
         """
         venv_python = str(_PLUGIN_ROOT / ".venv" / "bin" / "python")
         if not os.path.isfile(venv_python):
             venv_python = sys.executable
 
-        # Build a minimal environment — no inherited API keys
-        clean_env = {
-            "PATH": os.environ.get("PATH", ""),
-            "HOME": os.environ.get("HOME", ""),
-        }
-        if env_overrides:
-            clean_env.update(env_overrides)
-
-        dotenv_path = _PLUGIN_ROOT / ".env"
-        masked_path = dotenv_path.with_suffix(".env.masked-for-test")
-        moved = False
-        if dotenv_path.exists():
-            dotenv_path.rename(masked_path)
-            moved = True
-
-        try:
+        with tempfile.TemporaryDirectory() as empty_home:
+            # Build a minimal environment — no inherited API keys
+            clean_env = {
+                "PATH": os.environ.get("PATH", ""),
+                "HOME": empty_home,
+            }
+            if env_overrides:
+                clean_env.update(env_overrides)
             return subprocess.run(
                 [venv_python, str(_SCRIPTS_DIR / "setup.py"), "--check"],
                 capture_output=True,
                 text=True,
                 env=clean_env,
             )
-        finally:
-            if moved:
-                masked_path.rename(dotenv_path)
 
-    def test_exits_zero_with_anthropic_key_only(self):
-        """setup.py --check exits 0 when only ANTHROPIC_API_KEY is set."""
+    def test_exits_zero_with_sumtube_key(self):
+        """setup.py --check exits 0 when SUMTUBE_API_KEY is set."""
         result = self._run_setup_check(
-            env_overrides={"ANTHROPIC_API_KEY": "test-anthropic-key-placeholder"}
+            env_overrides={"SUMTUBE_API_KEY": "test-placeholder-not-a-real-key"}
         )
         self.assertEqual(
             result.returncode, 0,
-            f"Expected exit 0 with ANTHROPIC_API_KEY set. "
+            f"Expected exit 0 with SUMTUBE_API_KEY set. "
             f"stdout: {result.stdout!r} stderr: {result.stderr!r}",
         )
 
+    def test_anthropic_key_alone_is_not_accepted(self):
+        """ANTHROPIC_API_KEY alone must fail and the message must name SUMTUBE_API_KEY."""
+        result = self._run_setup_check(
+            env_overrides={"ANTHROPIC_API_KEY": "test-placeholder-not-a-real-key"}
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("SUMTUBE_API_KEY", result.stderr)
+
     def test_exits_nonzero_without_any_key(self):
-        """setup.py --check exits non-zero when neither SUMTUBE_API_KEY
-        nor ANTHROPIC_API_KEY is set, and the error message names both
-        variables (the actual lookup chain).
+        """setup.py --check exits non-zero when SUMTUBE_API_KEY is not set,
+        and the error message names it.
         """
         result = self._run_setup_check(env_overrides={})
         self.assertNotEqual(
@@ -761,17 +760,15 @@ class TestSetupCheck(unittest.TestCase):
             f"Expected non-zero exit when no Anthropic key is set. "
             f"stdout: {result.stdout!r} stderr: {result.stderr!r}",
         )
-        # Error message should reference at least one of the accepted var names.
-        self.assertTrue(
-            "SUMTUBE_API_KEY" in result.stderr or "ANTHROPIC_API_KEY" in result.stderr,
-            f"Error output must name SUMTUBE_API_KEY or ANTHROPIC_API_KEY. "
-            f"got stderr: {result.stderr!r}",
+        self.assertIn(
+            "SUMTUBE_API_KEY", result.stderr,
+            f"Error output must name SUMTUBE_API_KEY. got stderr: {result.stderr!r}",
         )
 
     def test_groq_key_absent_is_non_fatal(self):
         """setup.py --check exits 0 even when GROQ_API_KEY is absent (soft requirement)."""
         result = self._run_setup_check(
-            env_overrides={"ANTHROPIC_API_KEY": "test-anthropic-key-placeholder"}
+            env_overrides={"SUMTUBE_API_KEY": "test-placeholder-not-a-real-key"}
             # GROQ_API_KEY deliberately omitted
         )
         self.assertEqual(
