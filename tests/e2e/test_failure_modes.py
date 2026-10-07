@@ -12,7 +12,7 @@ import subprocess
 
 import pytest
 
-from conftest import run_subprocess, REPO_ROOT
+from conftest import run_subprocess, REPO_ROOT, _key_present
 
 
 # ---------- 1. Missing GROQ_API_KEY on a caption-less local file ----------
@@ -28,12 +28,13 @@ def test_local_file_without_groq_key_fails_cleanly(
     rename the .env file (if present) for the duration of the run so the
     subprocess has truly no Groq key available, then restore it.
     """
-    anthropic_key = os.environ.get("SUMTUBE_API_KEY")
-    if not anthropic_key:
-        pytest.skip("needs Anthropic key to reach the Whisper path")
-
+    # Plugin 0.2.0 also reads ~/.config/sumtube/.env, which could repopulate
+    # GROQ_API_KEY. Point HOME at an empty temp folder so no key file is found,
+    # and use a fake placeholder Anthropic key: the run must fail on the missing
+    # Groq key before any Anthropic call, so no real key is needed or passed.
     env = {k: v for k, v in os.environ.items() if k != "GROQ_API_KEY"}
-    env["SUMTUBE_API_KEY"] = anthropic_key
+    env["HOME"] = str(tmp_path)
+    env["SUMTUBE_API_KEY"] = "placeholder-not-a-real-key"
 
     dotenv_path = REPO_ROOT / "plugins" / "sumtube" / ".env"
     masked_path = dotenv_path.with_suffix(".env.masked-for-test")
@@ -86,7 +87,7 @@ def test_audio_file_too_large_rejected(
     """
     if not has_ffmpeg:
         pytest.skip("ffmpeg required to synthesise oversize fixture")
-    if not os.environ.get("GROQ_API_KEY"):
+    if not _key_present("GROQ_API_KEY"):
         pytest.skip("Whisper limit only matters when Groq is configured")
 
     big = tmp_path / "big.mp4"
@@ -118,7 +119,7 @@ def test_bad_anthropic_key_surfaces_clean_error(
     """A clearly-invalid Anthropic key must produce a non-zero exit and
     a message the user can act on — not a Python traceback.
     """
-    if not os.environ.get("GROQ_API_KEY"):
+    if not _key_present("GROQ_API_KEY"):
         pytest.skip("needs Groq for Whisper to reach the Anthropic call")
 
     monkeypatch.setenv("SUMTUBE_API_KEY", "sk-ant-invalid-key-for-testing")
