@@ -11,6 +11,7 @@ failed.
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -26,12 +27,33 @@ MEDIA_DOWNLOADER_SETUP = REPO_ROOT / "plugins" / "media-downloader" / "scripts" 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
 
+def _key_present(name: str) -> bool:
+    """True if `name` is set non-empty in the environment or in the key file.
+
+    Mirrors how plugin 0.2.0 finds keys (plugins/sumtube/scripts/key_loader.py):
+    the process environment, then ~/.config/sumtube/.env. Returns only a
+    boolean. The key value is never returned, logged or printed. HOME is
+    resolved at call time so tests can monkeypatch it.
+    """
+    if os.environ.get(name):
+        return True
+    env_file = Path.home() / ".config" / "sumtube" / ".env"
+    if not env_file.is_file():
+        return False
+    pattern = re.compile(rf"^(?:export\s+)?{re.escape(name)}=\S")
+    try:
+        with env_file.open(encoding="utf-8", errors="replace") as handle:
+            return any(pattern.match(line) for line in handle)
+    except OSError:
+        return False
+
+
 def _has_anthropic_key() -> bool:
-    return bool(os.environ.get("SUMTUBE_API_KEY"))
+    return _key_present("SUMTUBE_API_KEY")
 
 
 def _has_groq_key() -> bool:
-    return bool(os.environ.get("GROQ_API_KEY"))
+    return _key_present("GROQ_API_KEY")
 
 
 def _has_network() -> bool:
@@ -58,8 +80,9 @@ def pytest_collection_modifyitems(config, items):
     """Auto-skip tests whose preconditions are not met.
 
     - `live` marker: skipped if no network.
-    - `paid` marker: skipped if Anthropic key missing. Whisper-using paid tests
-      additionally need GROQ_API_KEY; that's checked per-test where relevant.
+    - `paid` marker: skipped if Anthropic key missing (environment or
+      ~/.config/sumtube/.env). Whisper-using paid tests additionally need
+      GROQ_API_KEY; that's checked per-test where relevant.
     - `youtube` marker: skipped unless `REEL_NOTES_RUN_YOUTUBE_LIVE=1` is set.
       Live YouTube extraction is environment-dependent and is treated as a
       manual smoke path rather than a default release gate. It is also skipped
@@ -72,7 +95,7 @@ def pytest_collection_modifyitems(config, items):
 
     skip_no_network = pytest.mark.skip(reason="no network — skipping live test")
     skip_no_key = pytest.mark.skip(
-        reason="no SUMTUBE_API_KEY — skipping paid test"
+        reason="no SUMTUBE_API_KEY in the environment or ~/.config/sumtube/.env — skipping paid test"
     )
     skip_youtube_not_opted_in = pytest.mark.skip(
         reason="set REEL_NOTES_RUN_YOUTUBE_LIVE=1 to run environment-dependent YouTube live tests"
