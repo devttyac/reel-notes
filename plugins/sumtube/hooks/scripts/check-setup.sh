@@ -5,8 +5,12 @@
 
 MISSING=0
 
-if [ -z "$ANTHROPIC_API_KEY" ]; then
-  echo "sumtube: ANTHROPIC_API_KEY not set. Export it: export ANTHROPIC_API_KEY=your-key"
+# Keys come from the environment or ~/.config/sumtube/.env. For the file, grep -q
+# only checks that a "SUMTUBE_API_KEY=" line with a non-empty value is present
+# (a yes/no answer). The value is never captured, printed or logged.
+KEY_FILE="$HOME/.config/sumtube/.env"
+if [ -z "$SUMTUBE_API_KEY" ] && ! { [ -f "$KEY_FILE" ] && grep -q '^SUMTUBE_API_KEY=[^[:space:]]' "$KEY_FILE"; }; then
+  echo "sumtube: SUMTUBE_API_KEY not set. Export it, or put SUMTUBE_API_KEY=... in ~/.config/sumtube/.env (chmod 600). ANTHROPIC_API_KEY is not read."
   MISSING=1
 fi
 

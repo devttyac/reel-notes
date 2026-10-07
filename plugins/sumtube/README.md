@@ -46,14 +46,32 @@ Run the setup script once after installation to verify dependencies:
 python scripts/setup.py --check
 ```
 
-**Required:** an Anthropic API key. sumtube looks for it in this order:
+**Required:** an Anthropic API key, named `SUMTUBE_API_KEY`. sumtube looks for it in this order:
 
 1. `--api-key <key>` CLI flag
 2. `SUMTUBE_API_KEY` environment variable
-3. `ANTHROPIC_API_KEY` environment variable
-4. `.env` file at the plugin root (either variable name)
+3. `SUMTUBE_API_KEY=...` in `~/.config/sumtube/.env`
 
-> **Important — Claude Code users:** Claude Code's sandbox injects an empty `ANTHROPIC_API_KEY` into all child processes, overwriting any shell-level value. **Use `SUMTUBE_API_KEY` instead.** Either export it (`export SUMTUBE_API_KEY=...`) or copy `.env.example` to `.env` in the plugin root and fill in the key. Standalone shell users can use `ANTHROPIC_API_KEY` as before.
+`ANTHROPIC_API_KEY` is **not read**, and a `.env` file inside the plugin folder is **not read**. Both were removed in 0.2.0 (see the migration steps below).
+
+To set up the key file:
+
+```bash
+mkdir -p ~/.config/sumtube
+cp .env.example ~/.config/sumtube/.env
+chmod 600 ~/.config/sumtube/.env
+# then edit ~/.config/sumtube/.env and fill in your keys
+```
+
+> **Why `SUMTUBE_API_KEY` only:** Claude Code's sandbox injects an empty `ANTHROPIC_API_KEY` into all child processes, overwriting any shell-level value. Separately, the Anthropic SDK reads `ANTHROPIC_API_KEY` by itself when it is given no key, so sumtube could pick it up by accident (if that variable is set, Claude Code may switch a subscriber to API billing). sumtube therefore never reads that variable and refuses to build an Anthropic client without `SUMTUBE_API_KEY`.
+
+**Upgrading from 0.1.x (breaking change):**
+
+1. `mkdir -p ~/.config/sumtube`
+2. Move your key file: `mv <plugin folder>/.env ~/.config/sumtube/.env`
+3. In that file, rename `ANTHROPIC_API_KEY` to `SUMTUBE_API_KEY` if it used the old name.
+4. `chmod 600 ~/.config/sumtube/.env`
+5. Run `python scripts/setup.py --check` to confirm.
 
 **Optional:** `GROQ_API_KEY` enables Whisper transcription for caption-less videos. Without it, sumtube cannot process videos that lack captions.
 
@@ -126,17 +144,25 @@ Write plain markdown to the current working directory (no Obsidian frontmatter o
 
 **Environment variables (NFR-11)**
 
-Never embed API keys in configuration files committed to source control. Set them in your shell profile or in a gitignored `.env` file at the plugin root:
+Never embed API keys in configuration files committed to source control. Set them in your shell profile or in `~/.config/sumtube/.env`, outside any repository:
 
 ```bash
 # Option A — shell export
-export SUMTUBE_API_KEY="..."     # preferred under Claude Code
+export SUMTUBE_API_KEY="..."
 export GROQ_API_KEY="..."        # optional
 
-# Option B — .env file (copy from .env.example)
-cp .env.example .env
-# then edit .env with your real keys
+# Option B — key file outside the plugin folder (copy from .env.example)
+mkdir -p ~/.config/sumtube
+cp .env.example ~/.config/sumtube/.env
+chmod 600 ~/.config/sumtube/.env
+# then edit ~/.config/sumtube/.env with your real keys
 ```
+
+**Prompt-injection filtering**
+
+Transcripts are untrusted text. Before a transcript reaches the model, sumtube runs a cleaning step that flags common variants of text addressed to an AI: override phrases ("ignore all previous instructions", "reveal your system prompt"), chat-template tokens, fake role tags, Markdown images pointing at external addresses, and long Base64 runs. Each flagged span is replaced by a visible marker, and the note starts with a warning line when anything was flagged. A harmless false flag, such as a video about prompt injection that quotes an attack phrase, shows the same warning.
+
+This is a filter for common variants, **not a guarantee**. It does not catch paraphrases, other languages, look-alike letters from other alphabets, or encodings other than Base64. The model's own resistance and the system-prompt rule are the other layers.
 
 The `--api-key` CLI flag is supported but should be used only for one-off scripted runs — never in shared command history.
 

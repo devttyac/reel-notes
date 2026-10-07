@@ -9,20 +9,19 @@ Usage:
 
 Exit codes:
     0 — all hard requirements met (GROQ_API_KEY warning does not block)
-    1 — a hard requirement is missing (Python 3.10+, or ANTHROPIC_API_KEY)
+    1 — a hard requirement is missing (Python 3.10+, or SUMTUBE_API_KEY)
 """
 
 import argparse
 import os
 import shutil
 import sys
-from pathlib import Path
 
-try:
-    from dotenv import load_dotenv
-    load_dotenv(Path(__file__).parent.parent / ".env")
-except ImportError:
-    pass  # dotenv optional; env vars may be set directly
+from key_loader import ENV_PATH, load_sumtube_env
+
+# Keys come from the environment or ~/.config/sumtube/.env only. A .env file
+# in the plugin folder is no longer read.
+load_sumtube_env()
 
 _MIN_PYTHON = (3, 10)
 
@@ -36,8 +35,8 @@ def run_checks() -> None:
     """Run environment preflight checks.
 
     Hard requirements:
-        - SUMTUBE_API_KEY or ANTHROPIC_API_KEY must be set.
-          (Also loaded from .env file in plugin root if present.)
+        - SUMTUBE_API_KEY must be set, in the environment or in
+          ~/.config/sumtube/.env. ANTHROPIC_API_KEY is not accepted.
 
     Soft requirements (warning only):
         - GROQ_API_KEY (Whisper fallback only).
@@ -57,13 +56,12 @@ def run_checks() -> None:
 
     failed = False
 
-    # --- Hard requirement: SUMTUBE_API_KEY or ANTHROPIC_API_KEY ---
-    if not (os.environ.get("SUMTUBE_API_KEY") or os.environ.get("ANTHROPIC_API_KEY")):
+    # --- Hard requirement: SUMTUBE_API_KEY ---
+    if not os.environ.get("SUMTUBE_API_KEY"):
         print(
-            "ERROR: No Anthropic API key found. Set SUMTUBE_API_KEY (preferred under "
-            "Claude Code, since its sandbox overwrites ANTHROPIC_API_KEY) or "
-            "ANTHROPIC_API_KEY in your shell, or place either in a .env file at the "
-            "plugin root. See .env.example.",
+            "ERROR: SUMTUBE_API_KEY is not set. Set it in your shell, or put "
+            f"SUMTUBE_API_KEY=... in {ENV_PATH} (chmod 600). ANTHROPIC_API_KEY is "
+            "not read. See .env.example.",
             file=sys.stderr,
         )
         failed = True

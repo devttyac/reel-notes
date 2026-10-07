@@ -27,7 +27,7 @@ Exit codes:
 | Code | Meaning |
 |---|---|
 | 0 | All required dependencies present — ready to run |
-| 1 | Neither `SUMTUBE_API_KEY` nor `ANTHROPIC_API_KEY` is set — skill cannot proceed; stop and report the missing key (use `SUMTUBE_API_KEY` under Claude Code) |
+| 1 | `SUMTUBE_API_KEY` is not set (environment or `~/.config/sumtube/.env`); `ANTHROPIC_API_KEY` is not read — skill cannot proceed; stop and report the missing key |
 | 2 | `yt-dlp` not installed — warn the user; caption-only YouTube URLs will still work |
 | 3 | `ffmpeg` not installed — warn the user; Whisper transcription will not be available |
 

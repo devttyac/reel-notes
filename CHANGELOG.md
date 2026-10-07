@@ -9,6 +9,35 @@ reel-notes uses two version axes, by design:
 
 Per-plugin versions therefore lag the repo tag whenever a release contains no changes to that plugin. This is intentional: it lets each plugin advertise its own stability independently to users who install only one of them via `claude plugin install <name>@reel-notes`. Section headers below are repo-release versions; per-plugin bumps are noted inline.
 
+## Unreleased — BREAKING: sumtube key location and prompt-injection hardening
+
+**Breaking change for existing sumtube installs.** `sumtube` plugin bumped to v0.2.0. The repo release tag (root `plugin.json`) is not bumped here; it moves when this is released.
+
+What breaks:
+
+- sumtube no longer reads a `.env` file inside the plugin folder. Keys load only from the process environment and from `~/.config/sumtube/.env`. There is no fallback to the old file.
+- sumtube no longer accepts `ANTHROPIC_API_KEY`. Only `SUMTUBE_API_KEY` is read. This closes a trap: the Anthropic SDK reads `ANTHROPIC_API_KEY` by itself when given no key, so an unset `SUMTUBE_API_KEY` could make sumtube pick it up by accident (if that variable is set, Claude Code may switch a subscriber to API billing). A missing key is now an error, and no Anthropic client is built without one.
+
+Migration steps:
+
+1. Create the folder: `mkdir -p ~/.config/sumtube`
+2. Move your key file there: `mv plugins/sumtube/.env ~/.config/sumtube/.env`
+3. In that file, rename `ANTHROPIC_API_KEY` to `SUMTUBE_API_KEY` (if it used the old name). Keep `GROQ_API_KEY` as it is.
+4. Restrict permissions: `chmod 600 ~/.config/sumtube/.env`
+5. If you export `ANTHROPIC_API_KEY` in your shell for sumtube, export `SUMTUBE_API_KEY` instead.
+6. Check: `python plugins/sumtube/scripts/setup.py --check`
+
+Prompt-injection hardening of the transcript cleaner (a filter for common variants, not a guarantee; the model's own resistance remains the main defence):
+
+- `plugins/sumtube/scripts/summariser.py`: `_sanitise_transcript` now matches override phrases ("ignore all previous instructions", "reveal your system prompt", "reply only with ...") loosely instead of by exact string. Matching runs on a private normalised copy (Unicode NFKC, invisible characters removed, letter-spaced words collapsed, lowercased) with `difflib` at a 0.85 similarity threshold. Each flagged span is replaced by a visible marker rather than deleted silently. Runs of 80 or more Base64 characters are flagged, except hex-only runs such as checksums. Closing-tag stripping (`</transcript_content>`, `</video_frames>`) repeats until stable.
+- `SYSTEM_PROMPT` gains a rule: text addressed to an AI is named in one line and not followed.
+- When the cleaner flags anything, sumtube's own code puts one warning line at the start of the note's overview, on every path (single, chunked, compact, visual). A harmless false flag, for example a video about prompt injection that quotes an attack phrase, also shows the warning.
+- `plugins/sumtube/scripts/key_loader.py` (new): the shared key-file loader used by `setup.py` and `summarize.py`.
+- `plugins/sumtube/scripts/setup.py`, `summarize.py`, `hooks/scripts/check-setup.sh`, `.env.example`, `skills/sumtube/SKILL.md`: accept `SUMTUBE_API_KEY` only; messages and help text updated.
+- `plugins/sumtube/tests/test_public_sumtube.py`: new keyless, offline application-boundary tests (key location, key guard, cleaner on the 11 applicable smoke-test payloads, benign and hash text unchanged, flagged-note warning on each path). These are offline regression evidence, not evidence that a live model resisted injection. Setup tests rewritten to use a temporary `HOME`.
+- `tests/e2e/`: key checks follow the new rule; a path-error test no longer reads the real home folder.
+- `README.md`, `plugins/sumtube/README.md`, `MANUAL_CHECKLIST.md`: new key location, migration steps, honest description of the hardening.
+
 ## v0.1.11 — 2026-05-20
 
 - `plugins/media-downloader/scripts/download.py`: optional `--cookies-from-browser` support added. Lookup order is `MEDIA_DOWNLOADER_COOKIES_FROM_BROWSER` → `YTDLP_COOKIES_FROM_BROWSER`. This is the practical fix for YouTube's `Sign in to confirm you're not a bot` challenge when a signed-in local browser session exists.

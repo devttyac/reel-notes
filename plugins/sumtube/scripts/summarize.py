@@ -24,11 +24,14 @@ import sys
 import json
 import tempfile
 from pathlib import Path
-from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
 
-load_dotenv(Path(__file__).parent.parent / ".env")
+# Keys come from the environment or ~/.config/sumtube/.env only. A .env file
+# in the plugin folder is no longer read.
+from key_loader import load_sumtube_env
+
+load_sumtube_env()
 
 from transcript import (
     detect_input_type,
@@ -431,8 +434,8 @@ def process_single_url(url: str, args, api_key: str, output_dir: str, history: d
     if not api_key and not args.transcript_only:
         print("Error: No API key provided.", file=sys.stderr)
         print(
-            "Set SUMTUBE_API_KEY (preferred under Claude Code) or "
-            "ANTHROPIC_API_KEY, or pass --api-key.",
+            "Set SUMTUBE_API_KEY in your shell or in ~/.config/sumtube/.env, "
+            "or pass --api-key. ANTHROPIC_API_KEY is not read.",
             file=sys.stderr,
         )
         return False
@@ -725,7 +728,7 @@ def main():
     parser.add_argument(
         "--api-key",
         default=None,
-        help="Anthropic API key. Lookup order: --api-key flag → SUMTUBE_API_KEY → ANTHROPIC_API_KEY (also loads from .env in plugin root).",
+        help="Anthropic API key. Lookup order: --api-key flag → SUMTUBE_API_KEY (environment or ~/.config/sumtube/.env). ANTHROPIC_API_KEY is not read.",
     )
     parser.add_argument(
         "--max-chunk-words",
@@ -837,7 +840,7 @@ def main():
     # path see "file does not exist" rather than "No API key provided".
     # process_single_url enforces the key requirement once it knows the
     # path is valid and the run will actually need to call Anthropic.
-    api_key = args.api_key or os.environ.get("SUMTUBE_API_KEY") or os.environ.get("ANTHROPIC_API_KEY")
+    api_key = args.api_key or os.environ.get("SUMTUBE_API_KEY")
 
     # Resolve output directory
     output_dir = args.output
