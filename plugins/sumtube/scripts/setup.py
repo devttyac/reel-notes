@@ -10,6 +10,7 @@ Usage:
 Exit codes:
     0 — all hard requirements met (GROQ_API_KEY warning does not block)
     1 — a hard requirement is missing (Python 3.10+, or SUMTUBE_API_KEY)
+    4 — the key folder ~/.config/sumtube could not be read (blocked by a sandbox or by permissions)
 """
 
 import argparse

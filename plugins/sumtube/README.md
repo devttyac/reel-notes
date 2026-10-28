@@ -73,6 +73,8 @@ chmod 600 ~/.config/sumtube/.env
 4. `chmod 600 ~/.config/sumtube/.env`
 5. Run `python scripts/setup.py --check` to confirm.
 
+**If sumtube exits with code 4:** the operating system refused to read `~/.config/sumtube`. sumtube prints one line and stops, and it does not fall back to keys in the environment. This is expected inside an AI tool whose sandbox blocks that folder (for example Codex CLI or Antigravity): run sumtube from Claude Code or a normal terminal instead. Elsewhere, check the permissions of the folder and of `~/.config/sumtube/.env`. Your keys are not missing, so do not re-create them.
+
 **Optional:** `GROQ_API_KEY` enables Whisper transcription for caption-less videos. Without it, sumtube cannot process videos that lack captions.
 
 **Optional for yt-dlp-authenticated downloads:** if YouTube blocks anonymous `yt-dlp` requests during Whisper fallback or `--visual` downloads, configure auth in this order:

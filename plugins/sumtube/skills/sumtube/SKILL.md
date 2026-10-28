@@ -30,6 +30,7 @@ Exit codes:
 | 1 | `SUMTUBE_API_KEY` is not set (environment or `~/.config/sumtube/.env`); `ANTHROPIC_API_KEY` is not read — skill cannot proceed; stop and report the missing key |
 | 2 | `yt-dlp` not installed — warn the user; caption-only YouTube URLs will still work |
 | 3 | `ffmpeg` not installed — warn the user; Whisper transcription will not be available |
+| 4 | The key folder `~/.config/sumtube` could not be read (the operating system refused access, for example inside an AI tool whose sandbox blocks it) — skill cannot proceed; stop and tell the user to run sumtube from Claude Code or a normal terminal |
 
 `GROQ_API_KEY` is **not** validated at preflight. It is checked lazily only when Whisper transcription is needed (caption-less video or local file). If Whisper is triggered and the key is absent, the skill raises `MissingAPIKeyError` and halts.
 
@@ -59,7 +60,7 @@ Follow these steps in order:
 python scripts/setup.py --check
 ```
 
-Stop if exit code is 1 (missing API key). Warn and continue if exit code is 2 or 3.
+Stop if exit code is 1 (missing API key). Stop if exit code is 4: the key folder is blocked in this tool; tell the user to run SumTube from Claude Code or a normal terminal. Do not ask them to re-create keys. Warn and continue if exit code is 2 or 3.
 
 **Step 2 — Detect input type**
 

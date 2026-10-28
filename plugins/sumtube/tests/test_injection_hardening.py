@@ -22,6 +22,7 @@ Isolation rules for every test in this module:
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 import socket
@@ -617,3 +618,81 @@ class TestFlaggedNoteWarning:
         fake_anthropic.reply_text = ""
         with pytest.raises(ValueError):
             summarise_transcript(_hostile_transcript(chunked=False), _METADATA, _FAKE_KEY)
+
+
+# ---------------------------------------------------------------------------
+# Blocked key folder: exit 4, one line, no traceback, no environment fallback
+# ---------------------------------------------------------------------------
+@pytest.mark.skipif(os.geteuid() == 0, reason="root ignores file permissions")
+class TestKeyFolderBlocked:
+    """A refused read of ~/.config/sumtube exits 4 with one stderr line.
+
+    Subprocess cases run the real setup.py and summarize.py with HOME pointing
+    at the temporary folder from the module's isolation fixture. Permissions are
+    restored on teardown so the temporary folder can be deleted. The cases that
+    need python-dotenv are skipped when it is not installed (the loader never
+    opens the file without it).
+    """
+
+    @pytest.fixture
+    def key_paths(self, home):
+        env_file = _write_key_file(home, "SUMTUBE_API_KEY=fake-file\n")
+        folder = env_file.parent
+        yield folder, env_file
+        folder.chmod(0o700)
+        env_file.chmod(0o600)
+
+    @staticmethod
+    def _assert_blocked(result):
+        assert result.returncode == 4, (result.stdout, result.stderr)
+        lines = result.stderr.strip().splitlines()
+        assert len(lines) == 1, result.stderr
+        assert "Claude Code or a normal terminal" in lines[0]
+        assert "Traceback" not in result.stderr
+        assert "Traceback" not in result.stdout
+
+    def test_blocked_folder_exits_4_from_setup_even_with_env_key(self, home, tmp_path, key_paths):
+        pytest.importorskip("dotenv", reason="python-dotenv not installed")
+        folder, _ = key_paths
+        folder.chmod(0o000)
+        env = _clean_subprocess_env(home, tmp_path, {"SUMTUBE_API_KEY": "fake-env"})
+        result = _run([sys.executable, str(_SCRIPTS_DIR / "setup.py"), "--check"], env, _SCRIPTS_DIR)
+        self._assert_blocked(result)
+
+    def test_blocked_folder_exits_4_from_summarize_before_any_network_call(self, home, tmp_path, key_paths):
+        pytest.importorskip("dotenv", reason="python-dotenv not installed")
+        folder, _ = key_paths
+        folder.chmod(0o000)
+        env = _clean_subprocess_env(home, tmp_path, {"SUMTUBE_API_KEY": "fake-env"})
+        result = _run(
+            [sys.executable, str(_SCRIPTS_DIR / "summarize.py"),
+             "https://www.youtube.com/watch?v=dQw4w9WgXcQ", "-o", str(tmp_path / "out")],
+            env, _SCRIPTS_DIR,
+        )
+        self._assert_blocked(result)
+
+    def test_blocked_file_exits_4_from_setup(self, home, tmp_path, key_paths):
+        pytest.importorskip("dotenv", reason="python-dotenv not installed")
+        _, env_file = key_paths
+        env_file.chmod(0o000)
+        env = _clean_subprocess_env(home, tmp_path, {"SUMTUBE_API_KEY": "fake-env"})
+        result = _run([sys.executable, str(_SCRIPTS_DIR / "setup.py"), "--check"], env, _SCRIPTS_DIR)
+        self._assert_blocked(result)
+
+    def test_readable_file_loads_as_before(self, home, key_paths, monkeypatch):
+        pytest.importorskip("dotenv", reason="python-dotenv not installed")
+        from scripts import key_loader
+
+        _, env_file = key_paths
+        monkeypatch.setenv("SUMTUBE_API_KEY", "placeholder")
+        monkeypatch.delenv("SUMTUBE_API_KEY")  # undo at teardown removes any loaded value
+        try:
+            assert key_loader.load_sumtube_env() == env_file
+            assert os.environ["SUMTUBE_API_KEY"] == "fake-file"
+        finally:
+            os.environ.pop("SUMTUBE_API_KEY", None)
+
+    def test_absent_file_returns_none(self, home):
+        from scripts import key_loader
+
+        assert key_loader.load_sumtube_env() is None
