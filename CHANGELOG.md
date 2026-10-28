@@ -9,6 +9,14 @@ reel-notes uses two version axes, by design:
 
 Per-plugin versions therefore lag the repo tag whenever a release contains no changes to that plugin. This is intentional: it lets each plugin advertise its own stability independently to users who install only one of them via `claude plugin install <name>@reel-notes`. Section headers below are repo-release versions; per-plugin bumps are noted inline.
 
+## Unreleased — sumtube 0.2.1: blocked key folder stops with exit 4
+
+- `plugins/sumtube/scripts/key_loader.py`: when the operating system refuses to read `~/.config/sumtube` (or its `.env`), sumtube prints one line to stderr and exits with code 4. No traceback. A missing file still behaves as before (nothing loaded).
+- **User-visible change:** when the key folder is blocked, keys set in the environment are no longer used and sumtube stops instead. Previously a blocked folder looked like "no file" and an exported `SUMTUBE_API_KEY` carried on silently; an unreadable `.env` file raised a traceback. This happens, for example, inside AI tools whose sandbox blocks the folder (Codex CLI, Antigravity). Run sumtube from Claude Code or a normal terminal.
+- `plugins/sumtube/scripts/setup.py`, `plugins/sumtube/skills/sumtube/SKILL.md`, `plugins/sumtube/README.md`: document exit code 4; SKILL.md tells the agent to stop and not ask the user to re-create keys.
+- `plugins/sumtube/tests/test_injection_hardening.py`: adds `TestKeyFolderBlocked` (blocked folder and blocked file exit 4 with one line and no traceback, even with an environment key; readable and absent files unchanged).
+- `plugins/sumtube/.claude-plugin/plugin.json`: version 0.2.0 → 0.2.1.
+
 ## Unreleased — BREAKING: sumtube key location and prompt-injection hardening
 
 **Breaking change for existing sumtube installs.** `sumtube` plugin bumped to v0.2.0. The repo release tag (root `plugin.json`) is not bumped here; it moves when this is released.
